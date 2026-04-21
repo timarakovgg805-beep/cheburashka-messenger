@@ -1,0 +1,15 @@
+{
+  "name": "pon-messenger",
+  "version": "1.0.0",
+  "description": "Simple P2P messenger with file sharing",
+  "main": "pon-server.js",
+  "scripts": {
+    "start": "node pon-server.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "socket.io": "^4.6.1"
+  }
+}

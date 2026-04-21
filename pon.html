@@ -1359,14 +1359,16 @@
                 width: 100%;
                 position: absolute;
                 z-index: 10;
+                height: 100%;
+                transition: transform 0.3s;
+            }
+
+            .sidebar.hidden-mobile {
+                transform: translateX(-100%);
             }
 
             .chat-area {
                 width: 100%;
-            }
-
-            .sidebar.hidden-mobile {
-                display: none;
             }
 
             .login-box {
@@ -1434,6 +1436,7 @@
 
         <div class="chat-area">
             <div class="chat-header hidden" id="chatHeader">
+                <button class="back-btn" onclick="showSidebar()" style="display: none; background: none; border: none; color: var(--text-normal); font-size: 24px; cursor: pointer; padding: 0 10px;">←</button>
                 <div class="chat-header-avatar" id="chatAvatar"></div>
                 <div class="chat-header-info">
                     <h2 id="chatName"></h2>
@@ -1856,6 +1859,12 @@
             recentUsers.unshift(user);
             recentUsers = recentUsers.slice(0, 10); // Храним только 10 последних
             localStorage.setItem('recentUsers', JSON.stringify(recentUsers));
+        }
+
+        // Показать сайдбар (для мобильных)
+        function showSidebar() {
+            document.querySelector('.sidebar').classList.remove('hidden-mobile');
+            document.querySelector('.back-btn').style.display = 'none';
         }
 
         // Переключение вкладок
@@ -2412,6 +2421,12 @@
 
             // Сохраняем как последний открытый чат
             localStorage.setItem('lastOpenedChat', JSON.stringify(user));
+
+            // На мобильных скрываем сайдбар и показываем кнопку "Назад"
+            if (window.innerWidth <= 768) {
+                document.querySelector('.sidebar').classList.add('hidden-mobile');
+                document.querySelector('.back-btn').style.display = 'block';
+            }
 
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('inputArea').classList.remove('hidden');

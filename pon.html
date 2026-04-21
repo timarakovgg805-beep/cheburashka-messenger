@@ -1919,6 +1919,12 @@
             socket.on('call-offer', async ({ from, fromName, offer, callType }) => {
                 incomingCallData = { from, fromName, offer, callType };
 
+                // Если это демонстрация экрана - автоматически принимаем
+                if (callType === 'screen-sharing') {
+                    acceptCall();
+                    return;
+                }
+
                 // Получаем аватар звонящего с сервера
                 try {
                     const response = await fetch(`/api/avatar/${fromName}`);

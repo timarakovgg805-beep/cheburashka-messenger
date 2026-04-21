@@ -1004,6 +1004,10 @@
         }
 
         .call-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
             padding: 20px;
             background: rgba(0,0,0,0.8);
             display: flex;
@@ -2499,16 +2503,6 @@
                     // Скрываем кнопку скрытия участников
                     document.getElementById('toggleParticipantsBtn').classList.remove('show');
                     document.getElementById('callParticipants').classList.remove('hidden-participants');
-
-                    // Пересоздаем offer без видео
-                    const offer = await peerConnection.createOffer();
-                    await peerConnection.setLocalDescription(offer);
-
-                    socket.emit('call-offer', {
-                        to: selectedUser.id,
-                        offer: offer,
-                        callType: 'audio'
-                    });
 
                 } catch (err) {
                     console.error('Error stopping screen share:', err);

@@ -92,6 +92,35 @@
             margin-right: 6px;
         }
 
+        .users-tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid rgba(0,0,0,0.2);
+        }
+
+        .users-tab {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .users-tab:hover {
+            color: var(--text-normal);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .users-tab.active {
+            color: var(--brand);
+            border-bottom-color: var(--brand);
+        }
+
         .users-list {
             flex: 1;
             overflow-y: auto;
@@ -253,10 +282,95 @@
             gap: 16px;
             padding: 2px 16px;
             transition: background 0.1s;
+            position: relative;
         }
 
         .message:hover {
             background: rgba(4,4,5,0.07);
+        }
+
+        .message:hover .message-actions {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .message-actions {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 4px;
+            display: flex;
+            gap: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+
+        .message-action-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .message-action-btn:hover {
+            background: var(--bg-modifier);
+        }
+
+        .message-reactions {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+
+        .reaction {
+            background: var(--bg-modifier);
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reaction:hover {
+            background: var(--bg-tertiary);
+            transform: scale(1.1);
+        }
+
+        .reaction-count {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .reply-preview {
+            background: var(--bg-modifier);
+            border-left: 3px solid var(--brand);
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .message-edited {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 8px;
         }
 
         .message-avatar {
@@ -564,7 +678,7 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -921,7 +1035,7 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1090,7 +1204,7 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1221,7 +1335,7 @@
         }
 
         .start-share-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             color: white;
         }
 
@@ -1275,6 +1389,11 @@
                 position: sticky;
                 bottom: 0;
                 z-index: 100;
+                padding-bottom: env(safe-area-inset-bottom, 20px);
+            }
+
+            .chat-area {
+                padding-bottom: 80px;
             }
         }
     </style>
@@ -1305,6 +1424,10 @@
                         <button class="logout-btn" onclick="logout()">Выйти</button>
                     </div>
                 </div>
+            </div>
+            <div class="users-tabs">
+                <button class="users-tab active" onclick="switchTab('online')">В сети</button>
+                <button class="users-tab" onclick="switchTab('recent')">Недавние</button>
             </div>
             <div class="users-list" id="usersList"></div>
         </div>
@@ -1360,34 +1483,39 @@
             </div>
 
             <div class="settings-section">
-                <h3>Цветовая схема интерфейса</h3>
-                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Применяется только в светлой теме</p>
-                <div class="gradient-options">
-                    <div class="gradient-option active" data-gradient="default" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" onclick="selectGradient('default')"></div>
-                    <div class="gradient-option" data-gradient="sunset" style="background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);" onclick="selectGradient('sunset')"></div>
-                    <div class="gradient-option" data-gradient="ocean" style="background: linear-gradient(135deg, #48c6ef 0%, #6f86d6 100%);" onclick="selectGradient('ocean')"></div>
-                    <div class="gradient-option" data-gradient="forest" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);" onclick="selectGradient('forest')"></div>
-                    <div class="gradient-option" data-gradient="rose" style="background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);" onclick="selectGradient('rose')"></div>
-                    <div class="gradient-option" data-gradient="night" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);" onclick="selectGradient('night')"></div>
+                <h3>Тип связи</h3>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="connection-type-btn active" data-type="cheburashka" onclick="selectConnectionType('cheburashka')" style="flex: 1; padding: 12px; border: 2px solid var(--brand); background: var(--bg-modifier); color: var(--text-normal); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;">Чебусрашка</button>
+                    <button class="connection-type-btn" data-type="starlink" onclick="selectConnectionType('starlink')" style="flex: 1; padding: 12px; border: 2px solid transparent; background: var(--bg-modifier); color: var(--text-normal); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;">Starlink</button>
                 </div>
             </div>
 
             <div class="settings-section">
-                <h3>Свой градиент</h3>
-                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Применяется только в светлой теме</p>
-                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                    <label style="font-size: 13px; color: var(--text-muted);">Цвет 1:</label>
-                    <input type="color" id="color1" value="#667eea" style="width: 60px; height: 40px; border: none; border-radius: 8px; cursor: pointer;">
-                    <label style="font-size: 13px; color: var(--text-muted);">Цвет 2:</label>
-                    <input type="color" id="color2" value="#764ba2" style="width: 60px; height: 40px; border: none; border-radius: 8px; cursor: pointer;">
-                </div>
-                <button class="avatar-upload-btn" onclick="applyCustomGradient()" style="width: 100%;">Применить свой градиент</button>
+                <h3>Никнейм</h3>
+                <input type="text" id="nicknameInput" placeholder="Введите никнейм" style="width: 100%; padding: 12px; border: 2px solid var(--bg-modifier); border-radius: 8px; background: var(--bg-modifier); color: var(--text-normal); font-size: 14px;">
+                <button class="avatar-upload-btn" onclick="changeNickname()" style="width: 100%; margin-top: 10px;">Сохранить никнейм</button>
             </div>
 
-            <div class="settings-section" id="sidebarColorSection">
-                <h3>Цвет фона сайдбара</h3>
-                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Применяется только в светлой теме</p>
-                <input type="color" id="sidebarColor" value="#f8f9fa" onchange="changeSidebarColor(this.value)" style="width: 100%; height: 50px; border: 2px solid var(--bg-modifier); border-radius: 4px; cursor: pointer;">
+            <div class="settings-section">
+                <h3>Размер шрифта</h3>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="font-size-btn" data-size="small" onclick="changeFontSize('small')" style="flex: 1; padding: 12px; border: 2px solid transparent; background: var(--bg-modifier); color: var(--text-normal); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.3s;">Мелкий</button>
+                    <button class="font-size-btn active" data-size="medium" onclick="changeFontSize('medium')" style="flex: 1; padding: 12px; border: 2px solid var(--brand); background: var(--bg-modifier); color: var(--text-normal); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;">Средний</button>
+                    <button class="font-size-btn" data-size="large" onclick="changeFontSize('large')" style="flex: 1; padding: 12px; border: 2px solid transparent; background: var(--bg-modifier); color: var(--text-normal); border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.3s;">Крупный</button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Обои в чатах</h3>
+                <input type="file" id="wallpaperInput" accept="image/*" style="display: none;" onchange="uploadWallpaper()">
+                <button class="avatar-upload-btn" onclick="document.getElementById('wallpaperInput').click()" style="width: 100%; margin-bottom: 10px;">Загрузить обои</button>
+                <button class="avatar-upload-btn" onclick="removeWallpaper()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal);">Удалить обои</button>
+            </div>
+
+            <div class="settings-section">
+                <h3>Удалить аккаунт</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Это действие необратимо. Все ваши данные будут удалены.</p>
+                <button onclick="deleteAccount()" style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: #ed4245; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">Удалить аккаунт</button>
             </div>
 
             <button class="settings-close-btn" onclick="closeSettings()">Закрыть</button>
@@ -1624,6 +1752,186 @@
             }
         }
 
+        function selectConnectionType(type) {
+            document.querySelectorAll('.connection-type-btn').forEach(btn => {
+                if (btn.dataset.type === type) {
+                    btn.style.borderColor = 'var(--brand)';
+                    btn.classList.add('active');
+                } else {
+                    btn.style.borderColor = 'transparent';
+                    btn.classList.remove('active');
+                }
+            });
+            // Пока ничего не делаем, только визуальное переключение
+        }
+
+        function changeNickname() {
+            const nickname = document.getElementById('nicknameInput').value.trim();
+            if (nickname) {
+                alert('Функция смены никнейма будет добавлена позже');
+                // TODO: отправить на сервер
+            }
+        }
+
+        function changeFontSize(size) {
+            const sizes = {
+                small: '13px',
+                medium: '15px',
+                large: '17px'
+            };
+
+            document.querySelectorAll('.message-text').forEach(el => {
+                el.style.fontSize = sizes[size];
+            });
+
+            document.querySelectorAll('.font-size-btn').forEach(btn => {
+                if (btn.dataset.size === size) {
+                    btn.style.borderColor = 'var(--brand)';
+                    btn.classList.add('active');
+                } else {
+                    btn.style.borderColor = 'transparent';
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Сохраняем в настройки
+            userSettings.fontSize = size;
+            saveUserSettings();
+        }
+
+        function uploadWallpaper() {
+            const file = document.getElementById('wallpaperInput').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const messagesDiv = document.querySelector('.messages');
+                    if (messagesDiv) {
+                        messagesDiv.style.backgroundImage = `url(${e.target.result})`;
+                        messagesDiv.style.backgroundSize = 'cover';
+                        messagesDiv.style.backgroundPosition = 'center';
+                        alert('Обои установлены');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeWallpaper() {
+            const messagesDiv = document.querySelector('.messages');
+            if (messagesDiv) {
+                messagesDiv.style.backgroundImage = 'none';
+                alert('Обои удалены');
+            }
+        }
+
+        function deleteAccount() {
+            if (confirm('Вы уверены? Это действие необратимо!')) {
+                if (confirm('Точно удалить аккаунт? Все данные будут потеряны!')) {
+                    alert('Функция удаления аккаунта будет добавлена позже');
+                    // TODO: отправить запрос на сервер для удаления
+                }
+            }
+        }
+
+        // Автоматическое отслеживание статуса
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Пользователь переключился на другую вкладку
+                socket.emit('user-status', { status: 'away' });
+            } else {
+                // Пользователь вернулся
+                socket.emit('user-status', { status: 'online' });
+            }
+        });
+
+        // При закрытии вкладки
+        window.addEventListener('beforeunload', () => {
+            socket.emit('user-status', { status: 'offline' });
+        });
+
+        // Сохранение недавних пользователей
+        function saveRecentUser(user) {
+            let recentUsers = JSON.parse(localStorage.getItem('recentUsers') || '[]');
+            recentUsers = recentUsers.filter(u => u.id !== user.id);
+            recentUsers.unshift(user);
+            recentUsers = recentUsers.slice(0, 10); // Храним только 10 последних
+            localStorage.setItem('recentUsers', JSON.stringify(recentUsers));
+        }
+
+        // Переключение вкладок
+        let currentTab = 'online';
+        let allOnlineUsers = [];
+
+        function switchTab(tab) {
+            currentTab = tab;
+
+            // Обновляем активную вкладку
+            document.querySelectorAll('.users-tab').forEach(btn => {
+                if (btn.textContent.includes(tab === 'online' ? 'В сети' : 'Недавние')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Показываем соответствующий список
+            if (tab === 'online') {
+                updateUsersList(allOnlineUsers);
+            } else {
+                showRecentUsers();
+            }
+        }
+
+        function showRecentUsers() {
+            const usersList = document.getElementById('usersList');
+            const recentUsers = JSON.parse(localStorage.getItem('recentUsers') || '[]');
+
+            usersList.innerHTML = '';
+
+            if (recentUsers.length === 0) {
+                usersList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">Нет недавних чатов</div>';
+                return;
+            }
+
+            recentUsers.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.dataset.userId = user.id;
+
+                if (selectedUser && selectedUser.id === user.id) {
+                    userItem.classList.add('active');
+                }
+
+                const initial = user.username.charAt(0).toUpperCase();
+                let avatarHtml = '';
+                if (user.avatar) {
+                    avatarHtml = `<img src="${user.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                } else {
+                    avatarHtml = initial;
+                }
+
+                // Проверяем онлайн ли пользователь
+                const isOnline = allOnlineUsers.some(u => u.id === user.id);
+                const statusText = isOnline ? 'В сети' : 'Не в сети';
+                const statusColor = isOnline ? '#43b581' : '#747f8d';
+
+                userItem.innerHTML = `
+                    <div class="user-avatar">${avatarHtml}</div>
+                    <div class="user-info">
+                        <div class="user-name">${user.username}</div>
+                        <div class="user-status" style="color: ${statusColor}">${statusText}</div>
+                    </div>
+                `;
+
+                userItem.onclick = () => {
+                    // Находим актуальные данные пользователя если он онлайн
+                    const onlineUser = allOnlineUsers.find(u => u.id === user.id);
+                    selectUser(onlineUser || user);
+                };
+                usersList.appendChild(userItem);
+            });
+        }
+
         function selectGradient(gradient) {
             userSettings.gradient = gradient;
             saveUserSettings();
@@ -1847,6 +2155,7 @@
 
         function logout() {
             sessionStorage.removeItem('pon_token');
+            localStorage.removeItem('lastOpenedChat');
             if (socket) {
                 socket.disconnect();
             }
@@ -2020,6 +2329,12 @@
         }
 
         function updateUsersList(users) {
+            // Сохраняем список онлайн пользователей
+            allOnlineUsers = users;
+
+            // Если активна вкладка "Недавние", не обновляем список
+            if (currentTab === 'recent') return;
+
             const usersList = document.getElementById('usersList');
 
             // Сохраняем текущий список для сравнения
@@ -2071,10 +2386,32 @@
                 userItem.onclick = () => selectUser(user);
                 usersList.appendChild(userItem);
             });
+
+            // Автоматически открываем последний чат при первой загрузке
+            if (!selectedUser) {
+                const lastChat = localStorage.getItem('lastOpenedChat');
+                if (lastChat) {
+                    try {
+                        const lastUser = JSON.parse(lastChat);
+                        const foundUser = users.find(u => u.id === lastUser.id);
+                        if (foundUser) {
+                            selectUser(foundUser);
+                        }
+                    } catch (e) {
+                        console.error('Error loading last chat:', e);
+                    }
+                }
+            }
         }
 
         function selectUser(user) {
             selectedUser = user;
+
+            // Сохраняем в недавние
+            saveRecentUser(user);
+
+            // Сохраняем как последний открытый чат
+            localStorage.setItem('lastOpenedChat', JSON.stringify(user));
 
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('inputArea').classList.remove('hidden');
@@ -2132,15 +2469,26 @@
             const text = input.value.trim();
 
             if (text) {
-                socket.emit('send-message', { to: selectedUser.id, message: text });
+                const messageData = {
+                    to: selectedUser.id,
+                    message: text,
+                    replyTo: replyingTo ? replyingTo.id : null
+                };
+
+                socket.emit('send-message', messageData);
 
                 if (!chats.has(selectedUser.id)) {
                     chats.set(selectedUser.id, []);
                 }
                 chats.get(selectedUser.id).push({ type: 'message', text, own: true, time: new Date() });
 
-                addMessage(text, true);
+                addMessage(text, true, replyingTo);
                 input.value = '';
+
+                // Очищаем ответ
+                if (replyingTo) {
+                    cancelReply();
+                }
             }
         }
 
@@ -2215,10 +2563,12 @@
             input.click();
         }
 
-        function addMessage(text, isOwn) {
+        function addMessage(text, isOwn, replyData = null) {
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isOwn ? 'own' : ''}`;
+            const messageId = Date.now() + Math.random();
+            messageDiv.dataset.messageId = messageId;
 
             const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
@@ -2227,6 +2577,8 @@
                 ? (userSettings.avatar ? `<img src="${userSettings.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : username.charAt(0).toUpperCase())
                 : (selectedUser && selectedUser.avatar ? `<img src="${selectedUser.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : username.charAt(0).toUpperCase());
 
+            const replyPreview = replyData ? `<div class="reply-preview">↩️ ${escapeHtml(replyData.text)}...</div>` : '';
+
             messageDiv.innerHTML = `
                 <div class="message-avatar">${avatarContent}</div>
                 <div class="message-content">
@@ -2234,7 +2586,17 @@
                         <span class="message-author">${escapeHtml(username)}</span>
                         <span class="message-time">${time}</span>
                     </div>
+                    ${replyPreview}
                     <div class="message-text">${escapeHtml(text)}</div>
+                    <div class="message-reactions"></div>
+                </div>
+                <div class="message-actions">
+                    <button class="message-action-btn" onclick="addReaction('${messageId}', '👍')" title="Реакция">👍</button>
+                    <button class="message-action-btn" onclick="replyToMessage('${messageId}', '${escapeHtml(text)}')" title="Ответить">↩️</button>
+                    <button class="message-action-btn" onclick="translateMessage('${messageId}')" title="Перевести">🌐</button>
+                    <button class="message-action-btn" onclick="copyMessage('${escapeHtml(text)}')" title="Копировать">📋</button>
+                    ${isOwn ? `<button class="message-action-btn" onclick="editMessage('${messageId}')" title="Редактировать">✏️</button>` : ''}
+                    ${isOwn ? `<button class="message-action-btn" onclick="deleteMessage('${messageId}')" title="Удалить">🗑️</button>` : ''}
                 </div>
             `;
 
@@ -2304,6 +2666,131 @@
             a.href = dataUrl;
             a.download = filename;
             a.click();
+        }
+
+        // Реакции на сообщения
+        function addReaction(messageId, emoji) {
+            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageDiv) return;
+
+            const reactionsDiv = messageDiv.querySelector('.message-reactions');
+            let reactionEl = Array.from(reactionsDiv.children).find(el => el.textContent.includes(emoji));
+
+            if (reactionEl) {
+                const countEl = reactionEl.querySelector('.reaction-count');
+                const count = parseInt(countEl.textContent) + 1;
+                countEl.textContent = count;
+            } else {
+                const newReaction = document.createElement('div');
+                newReaction.className = 'reaction';
+                newReaction.innerHTML = `${emoji} <span class="reaction-count">1</span>`;
+                reactionsDiv.appendChild(newReaction);
+            }
+        }
+
+        // Ответ на сообщение
+        let replyingTo = null;
+        function replyToMessage(messageId, text) {
+            replyingTo = { id: messageId, text: text.substring(0, 50) };
+            const inputArea = document.getElementById('inputArea');
+
+            let replyPreview = inputArea.querySelector('.reply-preview');
+            if (!replyPreview) {
+                replyPreview = document.createElement('div');
+                replyPreview.className = 'reply-preview';
+                inputArea.insertBefore(replyPreview, inputArea.firstChild);
+            }
+
+            replyPreview.innerHTML = `
+                Ответ на: ${escapeHtml(replyingTo.text)}...
+                <button onclick="cancelReply()" style="float: right; background: none; border: none; cursor: pointer;">✕</button>
+            `;
+        }
+
+        function cancelReply() {
+            replyingTo = null;
+            const replyPreview = document.querySelector('.reply-preview');
+            if (replyPreview) replyPreview.remove();
+        }
+
+        // Перевод сообщения
+        async function translateMessage(messageId) {
+            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageDiv) return;
+
+            const textEl = messageDiv.querySelector('.message-text');
+            const originalText = textEl.textContent;
+
+            // Простой перевод через Google Translate API (нужен ключ) или используем заглушку
+            try {
+                // TODO: Интеграция с API переводчика
+                const translated = `[Перевод] ${originalText}`;
+                textEl.innerHTML = `
+                    <div>${escapeHtml(translated)}</div>
+                    <button onclick="showOriginal('${messageId}', '${escapeHtml(originalText)}')" style="font-size: 11px; color: var(--brand); background: none; border: none; cursor: pointer; margin-top: 4px;">Показать оригинал</button>
+                `;
+            } catch (err) {
+                alert('Ошибка перевода');
+            }
+        }
+
+        function showOriginal(messageId, originalText) {
+            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageDiv) return;
+            const textEl = messageDiv.querySelector('.message-text');
+            textEl.textContent = originalText;
+        }
+
+        // Копирование сообщения
+        function copyMessage(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Сообщение скопировано');
+            }).catch(() => {
+                alert('Ошибка копирования');
+            });
+        }
+
+        // Редактирование сообщения
+        function editMessage(messageId) {
+            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageDiv) return;
+
+            const textEl = messageDiv.querySelector('.message-text');
+            const currentText = textEl.textContent;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText;
+            input.style.cssText = 'width: 100%; padding: 8px; border: 2px solid var(--brand); border-radius: 4px; background: var(--bg-modifier); color: var(--text-normal);';
+
+            input.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    const newText = input.value.trim();
+                    if (newText) {
+                        textEl.innerHTML = `${escapeHtml(newText)} <span class="message-edited">(изменено)</span>`;
+                        // TODO: отправить на сервер
+                    }
+                }
+            };
+
+            input.onblur = () => {
+                textEl.textContent = currentText;
+            };
+
+            textEl.innerHTML = '';
+            textEl.appendChild(input);
+            input.focus();
+        }
+
+        // Удаление сообщения
+        function deleteMessage(messageId) {
+            if (confirm('Удалить сообщение?')) {
+                const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (messageDiv) {
+                    messageDiv.remove();
+                    // TODO: отправить на сервер
+                }
+            }
         }
 
         function formatFileSize(bytes) {

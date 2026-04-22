@@ -1232,6 +1232,67 @@
         }
 
         .accept-btn {
+            padding: 15px 40px;
+            background: #43b581;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ai-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 4000;
+        }
+
+        .ai-modal.hidden {
+            display: none !important;
+        }
+
+        .ai-modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90vh;
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.5);
+        }
+
+        .ai-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .ai-close-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .accept-btn {
             padding: 15px 30px;
             background: #44ff44;
             color: white;
@@ -1518,6 +1579,12 @@
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Экспериментальные возможности</p>
 
                 <div id="betaContent" style="display: none;">
+                    <div id="aiFeatureContainer" style="display: none; margin-bottom: 15px;">
+                        <h4 style="font-size: 14px; margin-bottom: 8px;">Искусственный интеллект</h4>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Доступно только при подключении Starlink</p>
+                        <button class="avatar-upload-btn" onclick="enableAI()" style="width: 100%;">Включить ИИ</button>
+                    </div>
+
                     <div style="margin-bottom: 15px;">
                         <h4 style="font-size: 14px; margin-bottom: 8px;">Никнейм</h4>
                         <input type="text" id="nicknameInput" placeholder="Введите никнейм" style="width: 100%; padding: 12px; border: 2px solid var(--bg-modifier); border-radius: 8px; background: var(--bg-modifier); color: var(--text-normal); font-size: 14px;">
@@ -1544,9 +1611,18 @@
                 <div id="adminPanel" style="display: none;">
                     <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Список зарегистрированных пользователей:</p>
                     <div id="adminUsersList" style="max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
+
+                    <button class="avatar-upload-btn" onclick="showLoginLogs()" style="width: 100%; margin-bottom: 10px;">Показать логи входов</button>
+                    <div id="adminLoginLogs" style="display: none; max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
+
                     <button class="avatar-upload-btn" onclick="clearShameBoard()" style="width: 100%; margin-bottom: 10px; background: #ed4245; color: white;">Очистить доску позора</button>
                     <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal);">Выйти</button>
                 </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Changelog</h3>
+                <button class="avatar-upload-btn" onclick="showChangelog()" style="width: 100%;">Показать изменения</button>
             </div>
 
             <button class="settings-close-btn" onclick="closeSettings()">Закрыть</button>
@@ -1590,6 +1666,13 @@
         <div class="incoming-call-buttons">
             <button class="accept-btn" onclick="acceptCall()">Принять</button>
             <button class="reject-btn" onclick="rejectCall()">Отклонить</button>
+        </div>
+    </div>
+
+    <div class="ai-modal hidden" id="aiModal" onclick="closeAIModal()">
+        <div class="ai-modal-content" onclick="event.stopPropagation()">
+            <button class="ai-close-btn" onclick="closeAIModal()">✕</button>
+            <img src="ai-image.jpg" alt="AI Image" style="max-width: 100%; max-height: 80vh; border-radius: 8px;">
         </div>
     </div>
 
@@ -1793,7 +1876,14 @@
                     btn.classList.remove('active');
                 }
             });
-            // Пока ничего не делаем, только визуальное переключение
+
+            // Показываем/скрываем кнопку ИИ в зависимости от типа связи
+            const aiFeatureContainer = document.getElementById('aiFeatureContainer');
+            if (type === 'starlink') {
+                aiFeatureContainer.style.display = 'block';
+            } else {
+                aiFeatureContainer.style.display = 'none';
+            }
         }
 
         function changeNickname() {
@@ -1875,6 +1965,18 @@
                 content.style.display = 'none';
                 icon.textContent = '▼';
             }
+        }
+
+        function showChangelog() {
+            alert('Много хочешь мне, что заняться нечем');
+        }
+
+        function enableAI() {
+            document.getElementById('aiModal').classList.remove('hidden');
+        }
+
+        function closeAIModal() {
+            document.getElementById('aiModal').classList.add('hidden');
         }
 
         function toggleAdminPassword() {
@@ -1991,6 +2093,46 @@
             } catch (err) {
                 console.error('Clear shame board error:', err);
                 alert('Ошибка очистки доски позора');
+            }
+        }
+
+        async function showLoginLogs() {
+            const password = document.getElementById('adminPasswordInput').value;
+            const logsContainer = document.getElementById('adminLoginLogs');
+
+            try {
+                const response = await fetch('/api/admin/login-logs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    logsContainer.style.display = 'block';
+
+                    if (data.logs.length === 0) {
+                        logsContainer.innerHTML = '<div style="color: var(--text-muted); text-align: center;">Нет логов входов</div>';
+                        return;
+                    }
+
+                    let logsHtml = '<div style="color: var(--text-normal);">';
+                    logsHtml += `<strong>Последние ${data.logs.length} входов:</strong><br><br>`;
+                    data.logs.forEach((log, i) => {
+                        const date = new Date(log.timestamp).toLocaleString('ru-RU');
+                        logsHtml += `${i + 1}. <strong>${log.username}</strong><br>`;
+                        logsHtml += `<span style="color: var(--text-muted); font-size: 11px;">${date}</span><br><br>`;
+                    });
+                    logsHtml += '</div>';
+
+                    logsContainer.innerHTML = logsHtml;
+                } else {
+                    alert(data.error || 'Ошибка загрузки логов');
+                }
+            } catch (err) {
+                console.error('Show login logs error:', err);
+                alert('Ошибка загрузки логов входов');
             }
         }
 

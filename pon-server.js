@@ -25,6 +25,7 @@ let db;
 let usersCollection;
 let messagesCollection;
 let shameBoardCollection;
+let loginLogsCollection;
 
 async function connectDB() {
     try {
@@ -33,6 +34,7 @@ async function connectDB() {
         usersCollection = db.collection('users');
         messagesCollection = db.collection('messages');
         shameBoardCollection = db.collection('shameBoard');
+        loginLogsCollection = db.collection('loginLogs');
         console.log('Connected to MongoDB');
     } catch (err) {
         console.error('MongoDB connection error:', err);
@@ -156,6 +158,34 @@ async function saveShameBoardMessage(message) {
     fs.writeFileSync(SHAME_BOARD_FILE, JSON.stringify(messages, null, 2));
 }
 
+async function saveLoginLog(username) {
+    const logEntry = {
+        username,
+        timestamp: new Date().toISOString()
+    };
+
+    if (loginLogsCollection) {
+        try {
+            await loginLogsCollection.insertOne(logEntry);
+            return;
+        } catch (err) {
+            console.error('MongoDB saveLoginLog error:', err);
+        }
+    }
+    // Fallback: можно добавить сохранение в JSON файл если нужно
+}
+
+async function getLoginLogs() {
+    if (loginLogsCollection) {
+        try {
+            return await loginLogsCollection.find({}).sort({ timestamp: -1 }).limit(100).toArray();
+        } catch (err) {
+            console.error('MongoDB getLoginLogs error:', err);
+        }
+    }
+    return [];
+}
+
 app.use((req, res, next) => {
     const blockedFiles = ['/users.json', '/messages.json', '/shame-board.json'];
     if (blockedFiles.includes(req.path)) {
@@ -233,6 +263,9 @@ app.post('/api/login', async (req, res) => {
         if (!validPassword) {
             return res.status(401).json({ error: 'Неверное имя пользователя или пароль' });
         }
+
+        // Логируем успешный вход
+        await saveLoginLog(username);
 
         const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '7d' });
 
@@ -444,6 +477,22 @@ app.post('/api/admin/clear-shame-board', async (req, res) => {
     } catch (err) {
         console.error('Clear shame board error:', err);
         res.status(500).json({ error: 'Ошибка очистки доски позора' });
+    }
+});
+
+app.post('/api/admin/login-logs', async (req, res) => {
+    try {
+        const { password } = req.body;
+
+        if (password !== ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Неверный пароль' });
+        }
+
+        const logs = await getLoginLogs();
+        res.json({ success: true, logs });
+    } catch (err) {
+        console.error('Get login logs error:', err);
+        res.status(500).json({ error: 'Ошибка получения логов' });
     }
 });
 

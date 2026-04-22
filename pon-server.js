@@ -13,6 +13,7 @@ const io = new Server(server);
 app.use(express.json());
 
 const JWT_SECRET = 'pon-secret-key-change-in-production';
+const ADMIN_PASSWORD = 'admin123'; // Измени на свой пароль
 const USERS_FILE = path.join(__dirname, 'users.json');
 const MESSAGES_FILE = path.join(__dirname, 'messages.json');
 const SHAME_BOARD_FILE = path.join(__dirname, 'shame-board.json');
@@ -272,6 +273,41 @@ app.get('/api/avatar/:username', async (req, res) => {
     } catch (err) {
         console.error('Get avatar error:', err);
         res.status(500).json({ error: 'Ошибка получения аватара' });
+    }
+});
+
+app.post('/api/admin/verify', async (req, res) => {
+    try {
+        const { password } = req.body;
+
+        if (password === ADMIN_PASSWORD) {
+            res.json({ success: true });
+        } else {
+            res.status(401).json({ error: 'Неверный пароль' });
+        }
+    } catch (err) {
+        console.error('Admin verify error:', err);
+        res.status(500).json({ error: 'Ошибка проверки пароля' });
+    }
+});
+
+app.post('/api/admin/users', async (req, res) => {
+    try {
+        const { password } = req.body;
+
+        if (password !== ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Неверный пароль' });
+        }
+
+        const users = loadUsers();
+        const userList = users.map(u => ({
+            username: u.username,
+            createdAt: u.createdAt
+        }));
+        res.json({ success: true, total: users.length, users: userList });
+    } catch (err) {
+        console.error('Get users list error:', err);
+        res.status(500).json({ error: 'Ошибка получения списка пользователей' });
     }
 });
 

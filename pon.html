@@ -1522,6 +1522,19 @@
                 <button onclick="deleteAccount()" style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: #ed4245; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">Удалить аккаунт</button>
             </div>
 
+            <div class="settings-section" id="adminSection">
+                <h3>Админ-панель</h3>
+                <div id="adminLogin">
+                    <input type="password" id="adminPasswordInput" placeholder="Введите админ-пароль" style="width: 100%; padding: 12px; border: 2px solid var(--bg-modifier); border-radius: 8px; background: var(--bg-modifier); color: var(--text-normal); font-size: 14px; margin-bottom: 10px;">
+                    <button class="avatar-upload-btn" onclick="adminLogin()" style="width: 100%;">Войти</button>
+                </div>
+                <div id="adminPanel" style="display: none;">
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Список зарегистрированных пользователей:</p>
+                    <div id="adminUsersList" style="max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px;"></div>
+                    <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; margin-top: 10px; background: var(--bg-modifier); color: var(--text-normal);">Выйти</button>
+                </div>
+            </div>
+
             <button class="settings-close-btn" onclick="closeSettings()">Закрыть</button>
         </div>
     </div>
@@ -1835,6 +1848,54 @@
                     // TODO: отправить запрос на сервер для удаления
                 }
             }
+        }
+
+        // Админ-панель
+        async function adminLogin() {
+            const password = document.getElementById('adminPasswordInput').value;
+
+            if (!password) {
+                alert('Введите пароль');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('adminLogin').style.display = 'none';
+                    document.getElementById('adminPanel').style.display = 'block';
+
+                    let usersList = '<div style="color: var(--text-normal);">';
+                    usersList += `<strong>Всего пользователей: ${data.total}</strong><br><br>`;
+                    data.users.forEach((user, i) => {
+                        const date = new Date(user.createdAt).toLocaleString('ru-RU');
+                        usersList += `${i + 1}. <strong>${user.username}</strong><br>`;
+                        usersList += `<span style="color: var(--text-muted); font-size: 11px;">Создан: ${date}</span><br><br>`;
+                    });
+                    usersList += '</div>';
+
+                    document.getElementById('adminUsersList').innerHTML = usersList;
+                } else {
+                    alert('Неверный пароль');
+                }
+            } catch (err) {
+                console.error('Admin login error:', err);
+                alert('Ошибка входа в админ-панель');
+            }
+        }
+
+        function adminLogout() {
+            document.getElementById('adminLogin').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('adminUsersList').innerHTML = '';
         }
 
         // Автоматическое отслеживание статуса

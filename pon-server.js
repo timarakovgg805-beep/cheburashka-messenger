@@ -5,6 +5,7 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
+const { MongoClient } = require('mongodb');
 
 const app = express();
 const server = http.createServer(app);
@@ -13,14 +14,45 @@ const io = new Server(server);
 app.use(express.json());
 
 const JWT_SECRET = 'pon-secret-key-change-in-production';
-const ADMIN_PASSWORD = 'admin123'; // Измени на свой пароль
+const ADMIN_PASSWORD = 'qwerty321';
 const USERS_FILE = path.join(__dirname, 'users.json');
 const MESSAGES_FILE = path.join(__dirname, 'messages.json');
 const SHAME_BOARD_FILE = path.join(__dirname, 'shame-board.json');
 
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/cheburashka';
+let db;
+let usersCollection;
+let messagesCollection;
+let shameBoardCollection;
+
+async function connectDB() {
+    try {
+        const client = await MongoClient.connect(MONGODB_URI);
+        db = client.db();
+        usersCollection = db.collection('users');
+        messagesCollection = db.collection('messages');
+        shameBoardCollection = db.collection('shameBoard');
+        console.log('Connected to MongoDB');
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+        console.log('Falling back to JSON files');
+    }
+}
+
+connectDB();
+
 const onlineUsers = new Map();
 
-function loadUsers() {
+async function loadUsers() {
+    if (usersCollection) {
+        try {
+            return await usersCollection.find({}).toArray();
+        } catch (err) {
+            console.error('MongoDB loadUsers error:', err);
+        }
+    }
+    // Fallback to JSON
     try {
         const data = fs.readFileSync(USERS_FILE, 'utf8');
         return JSON.parse(data);
@@ -29,11 +61,46 @@ function loadUsers() {
     }
 }
 
-function saveUsers(users) {
+async function saveUsers(users) {
+    if (usersCollection) {
+        try {
+            await usersCollection.deleteMany({});
+            if (users.length > 0) {
+                await usersCollection.insertMany(users);
+            }
+            return;
+        } catch (err) {
+            console.error('MongoDB saveUsers error:', err);
+        }
+    }
+    // Fallback to JSON
     fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
 
-function loadMessages() {
+async function addUser(user) {
+    if (usersCollection) {
+        try {
+            await usersCollection.insertOne(user);
+            return;
+        } catch (err) {
+            console.error('MongoDB addUser error:', err);
+        }
+    }
+    // Fallback to JSON
+    const users = await loadUsers();
+    users.push(user);
+    await await saveUsers(users);
+}
+
+async function loadMessages() {
+    if (messagesCollection) {
+        try {
+            return await messagesCollection.find({}).toArray();
+        } catch (err) {
+            console.error('MongoDB loadMessages error:', err);
+        }
+    }
+    // Fallback to JSON
     try {
         const data = fs.readFileSync(MESSAGES_FILE, 'utf8');
         return JSON.parse(data);
@@ -42,13 +109,30 @@ function loadMessages() {
     }
 }
 
-function saveMessage(message) {
-    const messages = loadMessages();
+async function saveMessage(message) {
+    if (messagesCollection) {
+        try {
+            await messagesCollection.insertOne(message);
+            return;
+        } catch (err) {
+            console.error('MongoDB saveMessage error:', err);
+        }
+    }
+    // Fallback to JSON
+    const messages = await loadMessages();
     messages.push(message);
     fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2));
 }
 
-function loadShameBoardMessages() {
+async function loadShameBoardMessages() {
+    if (shameBoardCollection) {
+        try {
+            return await shameBoardCollection.find({}).toArray();
+        } catch (err) {
+            console.error('MongoDB loadShameBoardMessages error:', err);
+        }
+    }
+    // Fallback to JSON
     try {
         const data = fs.readFileSync(SHAME_BOARD_FILE, 'utf8');
         return JSON.parse(data);
@@ -57,8 +141,17 @@ function loadShameBoardMessages() {
     }
 }
 
-function saveShameBoardMessage(message) {
-    const messages = loadShameBoardMessages();
+async function saveShameBoardMessage(message) {
+    if (shameBoardCollection) {
+        try {
+            await shameBoardCollection.insertOne(message);
+            return;
+        } catch (err) {
+            console.error('MongoDB saveShameBoardMessage error:', err);
+        }
+    }
+    // Fallback to JSON
+    const messages = await loadShameBoardMessages();
     messages.push(message);
     fs.writeFileSync(SHAME_BOARD_FILE, JSON.stringify(messages, null, 2));
 }
@@ -93,7 +186,7 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: 'Пароль должен быть минимум 6 символов' });
         }
 
-        const users = loadUsers();
+        const users = await loadUsers();
 
         if (users.find(u => u.username === username)) {
             return res.status(400).json({ error: 'Пользователь уже существует' });
@@ -101,15 +194,15 @@ app.post('/api/register', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        users.push({
+        const newUser = {
             id: Date.now().toString(),
             username,
             password: hashedPassword,
             avatar: null,
             createdAt: new Date().toISOString()
-        });
+        };
 
-        saveUsers(users);
+        await addUser(newUser);
 
         const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '7d' });
 
@@ -128,7 +221,7 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ error: 'Имя пользователя и пароль обязательны' });
         }
 
-        const users = loadUsers();
+        const users = await loadUsers();
         const user = users.find(u => u.username === username);
 
         if (!user) {
@@ -176,7 +269,7 @@ app.post('/api/messages', async (req, res) => {
         const decoded = jwt.verify(token, JWT_SECRET);
         const username = decoded.username;
 
-        const allMessages = loadMessages();
+        const allMessages = await loadMessages();
         const userMessages = allMessages.filter(msg =>
             (msg.from === username && msg.to === withUser) ||
             (msg.from === withUser && msg.to === username)
@@ -199,7 +292,7 @@ app.post('/api/messages/delete', async (req, res) => {
         const decoded = jwt.verify(token, JWT_SECRET);
         const username = decoded.username;
 
-        const allMessages = loadMessages();
+        const allMessages = await loadMessages();
         const filteredMessages = allMessages.filter(msg =>
             !((msg.from === username && msg.to === withUser) ||
               (msg.from === withUser && msg.to === username))
@@ -224,7 +317,7 @@ app.post('/api/shame-board/messages', async (req, res) => {
 
         jwt.verify(token, JWT_SECRET);
 
-        const messages = loadShameBoardMessages();
+        const messages = await loadShameBoardMessages();
         res.json({ success: true, messages });
     } catch (err) {
         console.error('Load shame board messages error:', err);
@@ -243,12 +336,12 @@ app.post('/api/avatar/update', async (req, res) => {
         const decoded = jwt.verify(token, JWT_SECRET);
         const username = decoded.username;
 
-        const users = loadUsers();
+        const users = await loadUsers();
         const user = users.find(u => u.username === username);
 
         if (user) {
             user.avatar = avatar;
-            saveUsers(users);
+            await saveUsers(users);
             res.json({ success: true });
         } else {
             res.status(404).json({ error: 'Пользователь не найден' });
@@ -262,7 +355,7 @@ app.post('/api/avatar/update', async (req, res) => {
 app.get('/api/avatar/:username', async (req, res) => {
     try {
         const { username } = req.params;
-        const users = loadUsers();
+        const users = await loadUsers();
         const user = users.find(u => u.username === username);
 
         if (user && user.avatar) {
@@ -299,7 +392,7 @@ app.post('/api/admin/users', async (req, res) => {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
-        const users = loadUsers();
+        const users = await loadUsers();
         const userList = users.map(u => ({
             username: u.username,
             createdAt: u.createdAt
@@ -311,9 +404,52 @@ app.post('/api/admin/users', async (req, res) => {
     }
 });
 
+app.post('/api/admin/delete-user', async (req, res) => {
+    try {
+        const { password, username } = req.body;
+
+        if (password !== ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Неверный пароль' });
+        }
+
+        if (!username) {
+            return res.status(400).json({ error: 'Имя пользователя не указано' });
+        }
+
+        const users = await loadUsers();
+        const filteredUsers = users.filter(u => u.username !== username);
+
+        if (users.length === filteredUsers.length) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+
+        await saveUsers(filteredUsers);
+        res.json({ success: true, message: `Пользователь ${username} удален` });
+    } catch (err) {
+        console.error('Delete user error:', err);
+        res.status(500).json({ error: 'Ошибка удаления пользователя' });
+    }
+});
+
+app.post('/api/admin/clear-shame-board', async (req, res) => {
+    try {
+        const { password } = req.body;
+
+        if (password !== ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Неверный пароль' });
+        }
+
+        fs.writeFileSync(SHAME_BOARD_FILE, JSON.stringify([], null, 2));
+        res.json({ success: true, message: 'Доска позора очищена' });
+    } catch (err) {
+        console.error('Clear shame board error:', err);
+        res.status(500).json({ error: 'Ошибка очистки доски позора' });
+    }
+});
+
 app.get('/api/users/list', async (req, res) => {
     try {
-        const users = loadUsers();
+        const users = await loadUsers();
         const userList = users.map(u => ({
             username: u.username,
             createdAt: u.createdAt
@@ -328,13 +464,13 @@ app.get('/api/users/list', async (req, res) => {
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    socket.on('auth', (token) => {
+    socket.on('auth', async (token) => {
         try {
             const decoded = jwt.verify(token, JWT_SECRET);
             socket.username = decoded.username;
 
             // Получаем аватар пользователя
-            const users = loadUsers();
+            const users = await loadUsers();
             const user = users.find(u => u.username === decoded.username);
             const avatar = user?.avatar || null;
 
@@ -356,12 +492,12 @@ io.on('connection', (socket) => {
         socket.emit('users-update', Array.from(onlineUsers.values()));
     });
 
-    socket.on('send-message', ({ to, message }) => {
+    socket.on('send-message', async ({ to, message }) => {
         const fromUsername = onlineUsers.get(socket.id)?.username;
         const toUser = Array.from(onlineUsers.values()).find(u => u.id === to);
 
         if (fromUsername && toUser) {
-            saveMessage({
+            await saveMessage({
                 from: fromUsername,
                 to: toUser.username,
                 type: 'message',
@@ -377,11 +513,11 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on('send-shame-message', ({ message }) => {
+    socket.on('send-shame-message', async ({ message }) => {
         const fromUsername = onlineUsers.get(socket.id)?.username;
 
         if (fromUsername) {
-            saveShameBoardMessage({
+            await saveShameBoardMessage({
                 from: fromUsername,
                 content: message,
                 timestamp: new Date().toISOString()
@@ -394,12 +530,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('send-file', ({ to, file }) => {
+    socket.on('send-file', async ({ to, file }) => {
         const fromUsername = onlineUsers.get(socket.id)?.username;
         const toUser = Array.from(onlineUsers.values()).find(u => u.id === to);
 
         if (fromUsername && toUser) {
-            saveMessage({
+            await saveMessage({
                 from: fromUsername,
                 to: toUser.username,
                 type: 'file',
@@ -452,9 +588,9 @@ io.on('connection', (socket) => {
         io.to(to).emit('screen-share-stopped');
     });
 
-    socket.on('avatar-updated', () => {
+    socket.on('avatar-updated', async () => {
         // Обновляем информацию о пользователе
-        const users = loadUsers();
+        const users = await loadUsers();
         const user = users.find(u => u.username === socket.username);
         if (user && onlineUsers.has(socket.id)) {
             const onlineUser = onlineUsers.get(socket.id);

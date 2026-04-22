@@ -1495,12 +1495,6 @@
             </div>
 
             <div class="settings-section">
-                <h3>Никнейм</h3>
-                <input type="text" id="nicknameInput" placeholder="Введите никнейм" style="width: 100%; padding: 12px; border: 2px solid var(--bg-modifier); border-radius: 8px; background: var(--bg-modifier); color: var(--text-normal); font-size: 14px;">
-                <button class="avatar-upload-btn" onclick="changeNickname()" style="width: 100%; margin-top: 10px;">Сохранить никнейм</button>
-            </div>
-
-            <div class="settings-section">
                 <h3>Размер шрифта</h3>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button class="font-size-btn" data-size="small" onclick="changeFontSize('small')" style="flex: 1; padding: 12px; border: 2px solid transparent; background: var(--bg-modifier); color: var(--text-normal); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.3s;">Мелкий</button>
@@ -1517,21 +1511,41 @@
             </div>
 
             <div class="settings-section">
-                <h3>Удалить аккаунт</h3>
-                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Это действие необратимо. Все ваши данные будут удалены.</p>
-                <button onclick="deleteAccount()" style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: #ed4245; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">Удалить аккаунт</button>
+                <h3 onclick="toggleBetaSection()" style="cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Бета функции</span>
+                    <span id="betaToggleIcon">▼</span>
+                </h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Экспериментальные возможности</p>
+
+                <div id="betaContent" style="display: none;">
+                    <div style="margin-bottom: 15px;">
+                        <h4 style="font-size: 14px; margin-bottom: 8px;">Никнейм</h4>
+                        <input type="text" id="nicknameInput" placeholder="Введите никнейм" style="width: 100%; padding: 12px; border: 2px solid var(--bg-modifier); border-radius: 8px; background: var(--bg-modifier); color: var(--text-normal); font-size: 14px;">
+                        <button class="avatar-upload-btn" onclick="changeNickname()" style="width: 100%; margin-top: 10px;">Сохранить никнейм</button>
+                    </div>
+
+                    <div>
+                        <h4 style="font-size: 14px; margin-bottom: 8px; color: #ed4245;">Удалить аккаунт</h4>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Это действие необратимо. Все ваши данные будут удалены.</p>
+                        <button onclick="deleteAccount()" style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: #ed4245; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">Удалить аккаунт</button>
+                    </div>
+                </div>
             </div>
 
             <div class="settings-section" id="adminSection">
                 <h3>Админ-панель</h3>
                 <div id="adminLogin">
-                    <input type="password" id="adminPasswordInput" placeholder="Введите админ-пароль" style="width: 100%; padding: 12px; border: 2px solid var(--bg-modifier); border-radius: 8px; background: var(--bg-modifier); color: var(--text-normal); font-size: 14px; margin-bottom: 10px;">
+                    <div style="position: relative;">
+                        <input type="password" id="adminPasswordInput" placeholder="Введите админ-пароль" style="width: 100%; padding: 12px; padding-right: 45px; border: 2px solid var(--bg-modifier); border-radius: 8px; background: var(--bg-modifier); color: var(--text-normal); font-size: 14px; margin-bottom: 10px;">
+                        <button onclick="toggleAdminPassword()" style="position: absolute; right: 10px; top: 12px; background: none; border: none; cursor: pointer; font-size: 18px;">👁️</button>
+                    </div>
                     <button class="avatar-upload-btn" onclick="adminLogin()" style="width: 100%;">Войти</button>
                 </div>
                 <div id="adminPanel" style="display: none;">
                     <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Список зарегистрированных пользователей:</p>
-                    <div id="adminUsersList" style="max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px;"></div>
-                    <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; margin-top: 10px; background: var(--bg-modifier); color: var(--text-normal);">Выйти</button>
+                    <div id="adminUsersList" style="max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
+                    <button class="avatar-upload-btn" onclick="clearShameBoard()" style="width: 100%; margin-bottom: 10px; background: #ed4245; color: white;">Очистить доску позора</button>
+                    <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal);">Выйти</button>
                 </div>
             </div>
 
@@ -1851,6 +1865,23 @@
         }
 
         // Админ-панель
+        function toggleBetaSection() {
+            const content = document.getElementById('betaContent');
+            const icon = document.getElementById('betaToggleIcon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        function toggleAdminPassword() {
+            const input = document.getElementById('adminPasswordInput');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
         async function adminLogin() {
             const password = document.getElementById('adminPasswordInput').value;
 
@@ -1876,8 +1907,13 @@
                     usersList += `<strong>Всего пользователей: ${data.total}</strong><br><br>`;
                     data.users.forEach((user, i) => {
                         const date = new Date(user.createdAt).toLocaleString('ru-RU');
+                        usersList += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 8px; background: var(--bg-secondary); border-radius: 6px;">`;
+                        usersList += `<div>`;
                         usersList += `${i + 1}. <strong>${user.username}</strong><br>`;
-                        usersList += `<span style="color: var(--text-muted); font-size: 11px;">Создан: ${date}</span><br><br>`;
+                        usersList += `<span style="color: var(--text-muted); font-size: 11px;">Создан: ${date}</span>`;
+                        usersList += `</div>`;
+                        usersList += `<button onclick="deleteUser('${user.username}')" style="padding: 6px 12px; background: #ed4245; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">Удалить</button>`;
+                        usersList += `</div>`;
                     });
                     usersList += '</div>';
 
@@ -1896,6 +1932,66 @@
             document.getElementById('adminPanel').style.display = 'none';
             document.getElementById('adminPasswordInput').value = '';
             document.getElementById('adminUsersList').innerHTML = '';
+        }
+
+        async function deleteUser(username) {
+            if (!confirm(`Удалить пользователя ${username}?`)) {
+                return;
+            }
+
+            const password = document.getElementById('adminPasswordInput').value;
+
+            try {
+                const response = await fetch('/api/admin/delete-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, username })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`Пользователь ${username} удален`);
+                    // Перезагрузить список пользователей
+                    adminLogin();
+                } else {
+                    alert(data.error || 'Ошибка удаления');
+                }
+            } catch (err) {
+                console.error('Delete user error:', err);
+                alert('Ошибка удаления пользователя');
+            }
+        }
+
+        async function clearShameBoard() {
+            if (!confirm('Очистить всю доску позора? Это действие необратимо!')) {
+                return;
+            }
+
+            const password = document.getElementById('adminPasswordInput').value;
+
+            try {
+                const response = await fetch('/api/admin/clear-shame-board', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Доска позора очищена');
+                    // Если открыта доска позора, обновить её
+                    if (selectedUser && selectedUser.isShameBoard) {
+                        document.getElementById('messages').innerHTML = '';
+                    }
+                } else {
+                    alert(data.error || 'Ошибка очистки');
+                }
+            } catch (err) {
+                console.error('Clear shame board error:', err);
+                alert('Ошибка очистки доски позора');
+            }
         }
 
         // Автоматическое отслеживание статуса
@@ -2467,7 +2563,7 @@
                 userItem.className = 'user-item';
                 userItem.dataset.userId = user.id;
 
-                if (selectedUser && selectedUser.id === user.id) {
+                if (selectedUser && !selectedUser.isShameBoard && selectedUser.id === user.id) {
                     userItem.classList.add('active');
                     // Обновляем объект selectedUser с актуальными данными
                     selectedUser = user;
@@ -2599,6 +2695,9 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    const messagesDiv = document.getElementById('messages');
+                    messagesDiv.innerHTML = ''; // Очистить перед загрузкой
+
                     data.messages.forEach(msg => {
                         const isOwn = msg.from === currentUser;
                         addShameBoardMessage(msg.content, msg.from, isOwn);

@@ -2023,6 +2023,12 @@
         function showSidebar() {
             document.querySelector('.sidebar').classList.remove('hidden-mobile');
             document.querySelector('.back-btn').style.display = 'none';
+
+            // Скрываем область ввода и заголовок чата на мобильных
+            if (window.innerWidth <= 768) {
+                document.getElementById('chatHeader').classList.add('hidden');
+                document.getElementById('inputArea').classList.add('hidden');
+            }
         }
 
         // Переключение вкладок
@@ -2539,8 +2545,8 @@
             // Сохраняем список онлайн пользователей
             allOnlineUsers = users;
 
-            // Если активна вкладка "Недавние", не обновляем список
-            if (currentTab === 'recent') return;
+            // Если активна вкладка "Недавние" или "Доска позора", не обновляем список
+            if (currentTab === 'recent' || currentTab === 'shame') return;
 
             const usersList = document.getElementById('usersList');
 

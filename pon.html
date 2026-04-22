@@ -1430,6 +1430,7 @@
             <div class="users-tabs">
                 <button class="users-tab active" onclick="switchTab('online')">В сети</button>
                 <button class="users-tab" onclick="switchTab('recent')">Недавние</button>
+                <button class="users-tab" onclick="switchTab('shame')">Доска позора</button>
             </div>
             <div class="users-list" id="usersList"></div>
         </div>
@@ -1876,7 +1877,10 @@
 
             // Обновляем активную вкладку
             document.querySelectorAll('.users-tab').forEach(btn => {
-                if (btn.textContent.includes(tab === 'online' ? 'В сети' : 'Недавние')) {
+                const btnText = btn.textContent;
+                if ((tab === 'online' && btnText.includes('В сети')) ||
+                    (tab === 'recent' && btnText.includes('Недавние')) ||
+                    (tab === 'shame' && btnText.includes('Доска позора'))) {
                     btn.classList.add('active');
                 } else {
                     btn.classList.remove('active');
@@ -1886,8 +1890,10 @@
             // Показываем соответствующий список
             if (tab === 'online') {
                 updateUsersList(allOnlineUsers);
-            } else {
+            } else if (tab === 'recent') {
                 showRecentUsers();
+            } else if (tab === 'shame') {
+                showShameBoard();
             }
         }
 
@@ -1939,6 +1945,34 @@
                 };
                 usersList.appendChild(userItem);
             });
+        }
+
+        function showShameBoard() {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = '';
+
+            const shameBoardItem = document.createElement('div');
+            shameBoardItem.className = 'user-item';
+            if (selectedUser && selectedUser.id === 'shame-board') {
+                shameBoardItem.classList.add('active');
+            }
+
+            shameBoardItem.innerHTML = `
+                <div class="user-avatar" style="background: #ed4245;">🔥</div>
+                <div class="user-info">
+                    <div class="user-name">Доска позора</div>
+                    <div class="user-status">Общий чат</div>
+                </div>
+            `;
+
+            shameBoardItem.onclick = () => {
+                selectUser({
+                    id: 'shame-board',
+                    username: 'Доска позора',
+                    isShameBoard: true
+                });
+            };
+            usersList.appendChild(shameBoardItem);
         }
 
         function selectGradient(gradient) {
@@ -2263,6 +2297,13 @@
                 }
             });
 
+            socket.on('receive-shame-message', ({ from, message }) => {
+                if (selectedUser && selectedUser.isShameBoard) {
+                    const isOwn = from === currentUser;
+                    addShameBoardMessage(message, from, isOwn);
+                }
+            });
+
             socket.on('receive-file', ({ from, fromName, file }) => {
                 console.log('Received file from:', from, fromName);
 
@@ -2416,11 +2457,11 @@
         function selectUser(user) {
             selectedUser = user;
 
-            // Сохраняем в недавние
-            saveRecentUser(user);
-
-            // Сохраняем как последний открытый чат
-            localStorage.setItem('lastOpenedChat', JSON.stringify(user));
+            // Не сохраняем доску позора в недавние
+            if (!user.isShameBoard) {
+                saveRecentUser(user);
+                localStorage.setItem('lastOpenedChat', JSON.stringify(user));
+            }
 
             // На мобильных скрываем сайдбар и показываем кнопку "Назад"
             if (window.innerWidth <= 768) {
@@ -2431,14 +2472,19 @@
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('inputArea').classList.remove('hidden');
 
-            const initial = user.username.charAt(0).toUpperCase();
             const chatAvatar = document.getElementById('chatAvatar');
 
-            // Используем аватар из данных пользователя с сервера
-            if (user.avatar) {
-                chatAvatar.innerHTML = `<img src="${user.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            if (user.isShameBoard) {
+                chatAvatar.innerHTML = '🔥';
+                chatAvatar.style.background = '#ed4245';
             } else {
-                chatAvatar.textContent = initial;
+                const initial = user.username.charAt(0).toUpperCase();
+                if (user.avatar) {
+                    chatAvatar.innerHTML = `<img src="${user.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                } else {
+                    chatAvatar.textContent = initial;
+                }
+                chatAvatar.style.background = '';
             }
 
             document.getElementById('chatName').textContent = user.username;
@@ -2447,7 +2493,11 @@
             messagesDiv.innerHTML = '';
 
             // Загружаем историю с сервера
-            loadMessageHistory(user.username);
+            if (user.isShameBoard) {
+                loadShameBoardMessages();
+            } else {
+                loadMessageHistory(user.username);
+            }
 
             updateUsersList(Array.from(onlineUsers.values()));
         }
@@ -2477,6 +2527,27 @@
             }
         }
 
+        async function loadShameBoardMessages() {
+            try {
+                const response = await fetch('/api/shame-board/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: authToken })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    data.messages.forEach(msg => {
+                        const isOwn = msg.from === currentUser;
+                        addShameBoardMessage(msg.content, msg.from, isOwn);
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load shame board messages:', err);
+            }
+        }
+
         function sendMessage() {
             if (!selectedUser) return;
 
@@ -2484,20 +2555,28 @@
             const text = input.value.trim();
 
             if (text) {
-                const messageData = {
-                    to: selectedUser.id,
-                    message: text,
-                    replyTo: replyingTo ? replyingTo.id : null
-                };
+                if (selectedUser.isShameBoard) {
+                    // Отправка в доску позора
+                    socket.emit('send-shame-message', { message: text });
+                    addShameBoardMessage(text, currentUser, true);
+                } else {
+                    // Обычное сообщение
+                    const messageData = {
+                        to: selectedUser.id,
+                        message: text,
+                        replyTo: replyingTo ? replyingTo.id : null
+                    };
 
-                socket.emit('send-message', messageData);
+                    socket.emit('send-message', messageData);
 
-                if (!chats.has(selectedUser.id)) {
-                    chats.set(selectedUser.id, []);
+                    if (!chats.has(selectedUser.id)) {
+                        chats.set(selectedUser.id, []);
+                    }
+                    chats.get(selectedUser.id).push({ type: 'message', text, own: true, time: new Date() });
+
+                    addMessage(text, true, replyingTo);
                 }
-                chats.get(selectedUser.id).push({ type: 'message', text, own: true, time: new Date() });
 
-                addMessage(text, true, replyingTo);
                 input.value = '';
 
                 // Очищаем ответ
@@ -2612,6 +2691,35 @@
                     <button class="message-action-btn" onclick="copyMessage('${escapeHtml(text)}')" title="Копировать">📋</button>
                     ${isOwn ? `<button class="message-action-btn" onclick="editMessage('${messageId}')" title="Редактировать">✏️</button>` : ''}
                     ${isOwn ? `<button class="message-action-btn" onclick="deleteMessage('${messageId}')" title="Удалить">🗑️</button>` : ''}
+                </div>
+            `;
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addShameBoardMessage(text, fromUser, isOwn) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isOwn ? 'own' : ''}`;
+            const messageId = Date.now() + Math.random();
+            messageDiv.dataset.messageId = messageId;
+
+            const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${fromUser.charAt(0).toUpperCase()}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${escapeHtml(fromUser)}</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-text">${escapeHtml(text)}</div>
+                    <div class="message-reactions"></div>
+                </div>
+                <div class="message-actions">
+                    <button class="message-action-btn" onclick="addReaction('${messageId}', '👍')" title="Реакция">👍</button>
+                    <button class="message-action-btn" onclick="copyMessage('${escapeHtml(text)}')" title="Копировать">📋</button>
                 </div>
             `;
 

@@ -15,6 +15,7 @@ app.use(express.json());
 const JWT_SECRET = 'pon-secret-key-change-in-production';
 const USERS_FILE = path.join(__dirname, 'users.json');
 const MESSAGES_FILE = path.join(__dirname, 'messages.json');
+const SHAME_BOARD_FILE = path.join(__dirname, 'shame-board.json');
 
 const onlineUsers = new Map();
 
@@ -44,6 +45,21 @@ function saveMessage(message) {
     const messages = loadMessages();
     messages.push(message);
     fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2));
+}
+
+function loadShameBoardMessages() {
+    try {
+        const data = fs.readFileSync(SHAME_BOARD_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (err) {
+        return [];
+    }
+}
+
+function saveShameBoardMessage(message) {
+    const messages = loadShameBoardMessages();
+    messages.push(message);
+    fs.writeFileSync(SHAME_BOARD_FILE, JSON.stringify(messages, null, 2));
 }
 
 app.use(express.static(__dirname));
@@ -189,6 +205,24 @@ app.post('/api/messages/delete', async (req, res) => {
     }
 });
 
+app.post('/api/shame-board/messages', async (req, res) => {
+    try {
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ error: 'Токен не предоставлен' });
+        }
+
+        jwt.verify(token, JWT_SECRET);
+
+        const messages = loadShameBoardMessages();
+        res.json({ success: true, messages });
+    } catch (err) {
+        console.error('Load shame board messages error:', err);
+        res.status(500).json({ error: 'Ошибка загрузки сообщений' });
+    }
+});
+
 app.post('/api/avatar/update', async (req, res) => {
     try {
         const { token, avatar } = req.body;
@@ -283,6 +317,23 @@ io.on('connection', (socket) => {
             fromName: onlineUsers.get(socket.id)?.username,
             message
         });
+    });
+
+    socket.on('send-shame-message', ({ message }) => {
+        const fromUsername = onlineUsers.get(socket.id)?.username;
+
+        if (fromUsername) {
+            saveShameBoardMessage({
+                from: fromUsername,
+                content: message,
+                timestamp: new Date().toISOString()
+            });
+
+            io.emit('receive-shame-message', {
+                from: fromUsername,
+                message
+            });
+        }
     });
 
     socket.on('send-file', ({ to, file }) => {

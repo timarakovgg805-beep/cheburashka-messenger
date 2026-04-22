@@ -2558,7 +2558,6 @@
                 if (selectedUser.isShameBoard) {
                     // Отправка в доску позора
                     socket.emit('send-shame-message', { message: text });
-                    addShameBoardMessage(text, currentUser, true);
                 } else {
                     // Обычное сообщение
                     const messageData = {

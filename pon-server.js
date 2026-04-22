@@ -62,6 +62,14 @@ function saveShameBoardMessage(message) {
     fs.writeFileSync(SHAME_BOARD_FILE, JSON.stringify(messages, null, 2));
 }
 
+app.use((req, res, next) => {
+    const blockedFiles = ['/users.json', '/messages.json', '/shame-board.json'];
+    if (blockedFiles.includes(req.path)) {
+        return res.status(403).json({ error: 'Access denied' });
+    }
+    next();
+});
+
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
@@ -264,6 +272,20 @@ app.get('/api/avatar/:username', async (req, res) => {
     } catch (err) {
         console.error('Get avatar error:', err);
         res.status(500).json({ error: 'Ошибка получения аватара' });
+    }
+});
+
+app.get('/api/users/list', async (req, res) => {
+    try {
+        const users = loadUsers();
+        const userList = users.map(u => ({
+            username: u.username,
+            createdAt: u.createdAt
+        }));
+        res.json({ success: true, total: users.length, users: userList });
+    } catch (err) {
+        console.error('Get users list error:', err);
+        res.status(500).json({ error: 'Ошибка получения списка пользователей' });
     }
 });
 

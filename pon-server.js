@@ -481,6 +481,43 @@ app.post('/api/admin/clear-shame-board', async (req, res) => {
     }
 });
 
+app.post('/api/admin/rename-shame-board', async (req, res) => {
+    try {
+        const { password, newName } = req.body;
+
+        if (password !== ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Неверный пароль' });
+        }
+
+        if (!newName || newName.trim().length === 0) {
+            return res.status(400).json({ error: 'Название не может быть пустым' });
+        }
+
+        const configPath = path.join(__dirname, 'shame-board-config.json');
+        fs.writeFileSync(configPath, JSON.stringify({ name: newName.trim() }, null, 2));
+
+        res.json({ success: true, message: 'Доска позора переименована' });
+    } catch (err) {
+        console.error('Rename shame board error:', err);
+        res.status(500).json({ error: 'Ошибка переименования доски позора' });
+    }
+});
+
+app.get('/api/shame-board-name', (req, res) => {
+    try {
+        const configPath = path.join(__dirname, 'shame-board-config.json');
+        if (fs.existsSync(configPath)) {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            res.json({ success: true, name: config.name || 'Доска позора' });
+        } else {
+            res.json({ success: true, name: 'Доска позора' });
+        }
+    } catch (err) {
+        console.error('Get shame board name error:', err);
+        res.json({ success: true, name: 'Доска позора' });
+    }
+});
+
 app.post('/api/admin/login-logs', async (req, res) => {
     try {
         const { password } = req.body;

@@ -1459,6 +1459,92 @@
                 padding-bottom: 80px;
             }
         }
+
+        /* Crop Modal */
+        .crop-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            touch-action: none;
+        }
+
+        .crop-modal-content {
+            position: relative;
+            margin: 2% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            touch-action: none;
+        }
+
+        .crop-container {
+            max-height: 500px;
+            margin: 20px 0;
+            background: #000;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        .crop-container img {
+            max-width: 100%;
+            display: block;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-drag: none;
+            pointer-events: none;
+        }
+
+        .cropper-view-box,
+        .cropper-face {
+            border-radius: 50%;
+        }
+
+        .cropper-view-box {
+            box-shadow: 0 0 0 1px #39f;
+            outline: 0;
+        }
+
+        .crop-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .crop-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .crop-btn-apply {
+            background: var(--brand);
+            color: white;
+        }
+
+        .crop-btn-apply:hover {
+            background: var(--brand-hover);
+        }
+
+        .crop-btn-cancel {
+            background: var(--bg-modifier);
+            color: var(--text-normal);
+        }
+
+        .crop-btn-cancel:hover {
+            background: #4a4d54;
+        }
     </style>
 </head>
 <body>
@@ -1615,6 +1701,9 @@
                     <button class="avatar-upload-btn" onclick="showLoginLogs()" style="width: 100%; margin-bottom: 10px;">Показать логи входов</button>
                     <div id="adminLoginLogs" style="display: none; max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
 
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Доска позора</h4>
+                    <input type="text" id="shameBoardNameInput" placeholder="Название доски позора" style="width: 100%; padding: 10px; background: var(--bg-modifier); border: 1px solid var(--bg-tertiary); border-radius: 4px; color: var(--text-normal); margin-bottom: 10px;">
+                    <button class="avatar-upload-btn" onclick="renameShameboard()" style="width: 100%; margin-bottom: 10px;">Переименовать доску позора</button>
                     <button class="avatar-upload-btn" onclick="clearShameBoard()" style="width: 100%; margin-bottom: 10px; background: #ed4245; color: white;">Очистить доску позора</button>
                     <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal);">Выйти</button>
                 </div>
@@ -1705,6 +1794,22 @@
         </div>
     </div>
 
+    <!-- Crop Modal -->
+    <div id="cropModal" class="crop-modal">
+        <div class="crop-modal-content">
+            <h3 style="margin-bottom: 15px; color: var(--text-normal);">Обрезать фото</h3>
+            <div class="crop-container">
+                <img id="cropImage" src="" alt="Crop">
+            </div>
+            <div class="crop-buttons">
+                <button class="crop-btn crop-btn-cancel" onclick="closeCropModal()">Отмена</button>
+                <button class="crop-btn crop-btn-apply" onclick="applyCrop()">Применить</button>
+            </div>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         let socket;
@@ -2020,6 +2125,9 @@
                     usersList += '</div>';
 
                     document.getElementById('adminUsersList').innerHTML = usersList;
+
+                    // Загружаем текущее название доски позора
+                    loadShameBoardName();
                 } else {
                     alert('Неверный пароль');
                 }
@@ -2093,6 +2201,49 @@
             } catch (err) {
                 console.error('Clear shame board error:', err);
                 alert('Ошибка очистки доски позора');
+            }
+        }
+
+        async function renameShameboard() {
+            const newName = document.getElementById('shameBoardNameInput').value.trim();
+            if (!newName) {
+                alert('Введите новое название');
+                return;
+            }
+
+            const password = document.getElementById('adminPasswordInput').value;
+
+            try {
+                const response = await fetch('/api/admin/rename-shame-board', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, newName })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Доска позора переименована');
+                    // Обновляем список пользователей
+                    socket.emit('request-users');
+                } else {
+                    alert(data.error || 'Ошибка переименования');
+                }
+            } catch (err) {
+                console.error('Rename shame board error:', err);
+                alert('Ошибка переименования доски позора');
+            }
+        }
+
+        async function loadShameBoardName() {
+            try {
+                const response = await fetch('/api/shame-board-name');
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('shameBoardNameInput').value = data.name || 'Доска позора';
+                }
+            } catch (err) {
+                console.error('Load shame board name error:', err);
             }
         }
 
@@ -2256,6 +2407,18 @@
             const usersList = document.getElementById('usersList');
             usersList.innerHTML = '';
 
+            // Загружаем название доски позора
+            let shameBoardName = 'Доска позора';
+            try {
+                const response = await fetch('/api/shame-board-name');
+                const data = await response.json();
+                if (data.success) {
+                    shameBoardName = data.name;
+                }
+            } catch (err) {
+                console.error('Error loading shame board name:', err);
+            }
+
             const shameBoardItem = document.createElement('div');
             shameBoardItem.className = 'user-item';
             if (selectedUser && selectedUser.id === 'shame-board') {
@@ -2265,7 +2428,7 @@
             shameBoardItem.innerHTML = `
                 <div class="user-avatar" style="background: #ed4245;">🔥</div>
                 <div class="user-info">
-                    <div class="user-name">Доска позора</div>
+                    <div class="user-name">${shameBoardName}</div>
                     <div class="user-status">Общий чат</div>
                 </div>
             `;
@@ -2273,7 +2436,7 @@
             shameBoardItem.onclick = () => {
                 selectUser({
                     id: 'shame-board',
-                    username: 'Доска позора',
+                    username: shameBoardName,
                     isShameBoard: true
                 });
             };
@@ -2317,34 +2480,94 @@
             document.documentElement.style.setProperty('--primary-gradient', selectedGradient);
         }
 
+        let cropper = null;
+
         function uploadAvatar() {
             const file = document.getElementById('avatarInput').files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = async (e) => {
-                    userSettings.avatar = e.target.result;
-                    saveUserSettings();
-                    updateAvatarPreview();
+                reader.onload = (e) => {
+                    // Открываем модалку с cropper
+                    const cropImage = document.getElementById('cropImage');
+                    cropImage.src = e.target.result;
+                    const modal = document.getElementById('cropModal');
+                    modal.style.display = 'block';
 
-                    // Сохраняем на сервер
-                    try {
-                        await fetch('/api/avatar/update', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                token: authToken,
-                                avatar: e.target.result
-                            })
+                    // Предотвращаем перетаскивание изображения
+                    cropImage.ondragstart = () => false;
+                    cropImage.style.touchAction = 'none';
+
+                    // Инициализируем cropper после отображения
+                    setTimeout(() => {
+                        if (cropper) {
+                            cropper.destroy();
+                        }
+                        cropper = new Cropper(cropImage, {
+                            aspectRatio: 1,
+                            viewMode: 2,
+                            dragMode: 'move',
+                            autoCropArea: 0.8,
+                            restore: false,
+                            guides: true,
+                            center: true,
+                            highlight: false,
+                            cropBoxMovable: true,
+                            cropBoxResizable: true,
+                            toggleDragModeOnDblclick: false,
+                            minContainerWidth: 200,
+                            minContainerHeight: 200,
+                            responsive: true,
+                            checkOrientation: true,
                         });
-
-                        // Обновляем список пользователей для всех
-                        socket.emit('avatar-updated');
-                    } catch (err) {
-                        console.error('Error updating avatar on server:', err);
-                    }
+                    }, 100);
                 };
                 reader.readAsDataURL(file);
             }
+        }
+
+        function closeCropModal() {
+            document.getElementById('cropModal').style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            document.getElementById('avatarInput').value = '';
+        }
+
+        async function applyCrop() {
+            if (!cropper) return;
+
+            const canvas = cropper.getCroppedCanvas({
+                width: 256,
+                height: 256,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
+
+            const croppedImage = canvas.toDataURL('image/jpeg', 0.9);
+
+            userSettings.avatar = croppedImage;
+            saveUserSettings();
+            updateAvatarPreview();
+
+            // Сохраняем на сервер
+            try {
+                await fetch('/api/avatar/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: authToken,
+                        avatar: croppedImage
+                    })
+                });
+
+                // Обновляем список пользователей для всех
+                socket.emit('avatar-updated');
+            } catch (err) {
+                console.error('Error updating avatar on server:', err);
+            }
+
+            closeCropModal();
         }
 
         function applyCustomGradient() {
@@ -2411,10 +2634,12 @@
                 passwordInput.type = 'password';
             }
         }
+        window.togglePasswordXz = togglePasswordXz;
 
         function downloadCheburasshka() {
             alert('Вы вступили в партию');
         }
+        window.downloadCheburasshka = downloadCheburasshka;
 
         function toggleAuthMode() {
             isRegisterMode = !isRegisterMode;
@@ -2433,6 +2658,7 @@
             }
             hideError();
         }
+        window.toggleAuthMode = toggleAuthMode;
 
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
@@ -2477,6 +2703,7 @@
                 console.error(err);
             }
         }
+        window.login = login;
 
         async function autoLogin() {
             try {
@@ -2683,7 +2910,7 @@
             });
         }
 
-        function updateUsersList(users) {
+        async function updateUsersList(users) {
             // Сохраняем список онлайн пользователей
             allOnlineUsers = users;
 

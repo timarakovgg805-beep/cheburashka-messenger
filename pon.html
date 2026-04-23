@@ -1835,6 +1835,7 @@
 
                     <h4 style="margin-top: 15px; margin-bottom: 10px;">Блокировка IP</h4>
                     <input type="text" id="blockIPInput" placeholder="IP-адрес для блокировки" style="width: 100%; padding: 10px; background: var(--bg-modifier); border: 1px solid var(--bg-tertiary); border-radius: 4px; color: var(--text-normal); margin-bottom: 10px;">
+                    <input type="text" id="blockReasonInput" placeholder="Причина блокировки" style="width: 100%; padding: 10px; background: var(--bg-modifier); border: 1px solid var(--bg-tertiary); border-radius: 4px; color: var(--text-normal); margin-bottom: 10px;">
                     <button class="avatar-upload-btn" onclick="blockIP()" style="width: 100%; margin-bottom: 10px; background: #ed4245; color: white;">Заблокировать IP</button>
                     <button class="avatar-upload-btn" onclick="showBlockedIPs()" style="width: 100%; margin-bottom: 10px;">Показать заблокированные IP</button>
                     <div id="blockedIPsList" style="display: none; max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
@@ -2639,13 +2640,19 @@
         async function blockIP() {
             const password = document.getElementById('adminPasswordInput').value;
             const ip = document.getElementById('blockIPInput').value.trim();
+            const reason = document.getElementById('blockReasonInput').value.trim();
 
             if (!ip) {
                 alert('Введите IP-адрес');
                 return;
             }
 
-            if (!confirm(`Заблокировать IP ${ip}?`)) {
+            if (!reason) {
+                alert('Введите причину блокировки');
+                return;
+            }
+
+            if (!confirm(`Заблокировать IP ${ip}?\nПричина: ${reason}`)) {
                 return;
             }
 
@@ -2653,13 +2660,14 @@
                 const response = await fetch('/api/admin/block-ip', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password, ip })
+                    body: JSON.stringify({ password, ip, reason })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
                     document.getElementById('blockIPInput').value = '';
+                    document.getElementById('blockReasonInput').value = '';
                     alert('IP заблокирован');
                 } else {
                     alert(data.error || 'Ошибка блокировки');
@@ -2692,9 +2700,17 @@
                     }
 
                     let html = '<div style="color: var(--text-normal);"><strong>Заблокированные IP:</strong><br><br>';
-                    data.ips.forEach((ip, i) => {
-                        html += `${i + 1}. <span style="color: var(--brand);">${ip}</span> `;
-                        html += `<button onclick="unblockIP('${ip}')" style="background: #43b581; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Разблокировать</button><br>`;
+                    data.ips.forEach((ipData, i) => {
+                        const ip = typeof ipData === 'string' ? ipData : ipData.ip;
+                        const reason = typeof ipData === 'string' ? 'Нарушение правил' : (ipData.reason || 'Нарушение правил');
+                        const date = typeof ipData === 'object' && ipData.blockedAt ? new Date(ipData.blockedAt).toLocaleString('ru-RU') : '';
+
+                        html += `${i + 1}. <span style="color: var(--brand);">${ip}</span><br>`;
+                        html += `<span style="color: var(--text-muted); font-size: 11px;">Причина: ${reason}</span><br>`;
+                        if (date) {
+                            html += `<span style="color: var(--text-muted); font-size: 11px;">Заблокирован: ${date}</span><br>`;
+                        }
+                        html += `<button onclick="unblockIP('${ip}')" style="background: #43b581; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-top: 5px;">Разблокировать</button><br><br>`;
                     });
                     html += '</div>';
 

@@ -19,6 +19,8 @@ const ADMIN_PASSWORD = 'qwerty321';
 const USERS_FILE = path.join(__dirname, 'users.json');
 const MESSAGES_FILE = path.join(__dirname, 'messages.json');
 const SHAME_BOARD_FILE = path.join(__dirname, 'shame-board.json');
+const ADMIN_SETTINGS_FILE = path.join(__dirname, 'admin-settings.json');
+const LOGIN_LOGS_FILE = path.join(__dirname, 'login-logs.json');
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/cheburashka';
@@ -198,11 +200,78 @@ async function getLoginLogs() {
             console.error('MongoDB getLoginLogs error:', err);
         }
     }
-    return [];
+    // Fallback to JSON
+    try {
+        const data = fs.readFileSync(LOGIN_LOGS_FILE, 'utf8');
+        const logs = JSON.parse(data);
+        return logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 100);
+    } catch (err) {
+        return [];
+    }
+}
+
+async function saveLoginLog(log) {
+    if (loginLogsCollection) {
+        try {
+            await loginLogsCollection.insertOne(log);
+            return;
+        } catch (err) {
+            console.error('MongoDB saveLoginLog error:', err);
+        }
+    }
+    // Fallback to JSON
+    try {
+        let logs = [];
+        try {
+            const data = fs.readFileSync(LOGIN_LOGS_FILE, 'utf8');
+            logs = JSON.parse(data);
+        } catch (err) {
+            // File doesn't exist yet
+        }
+        logs.push(log);
+        fs.writeFileSync(LOGIN_LOGS_FILE, JSON.stringify(logs, null, 2));
+    } catch (err) {
+        console.error('Save login log error:', err);
+    }
+}
+
+async function loadAdminSettings() {
+    if (adminSettingsCollection) {
+        try {
+            const settings = await adminSettingsCollection.findOne({ _id: 'config' });
+            return settings || { registrationEnabled: true, announcement: null, blockedIPs: [] };
+        } catch (err) {
+            console.error('MongoDB loadAdminSettings error:', err);
+        }
+    }
+    // Fallback to JSON
+    try {
+        const data = fs.readFileSync(ADMIN_SETTINGS_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (err) {
+        return { registrationEnabled: true, announcement: null, blockedIPs: [] };
+    }
+}
+
+async function saveAdminSettings(settings) {
+    if (adminSettingsCollection) {
+        try {
+            await adminSettingsCollection.updateOne(
+                { _id: 'config' },
+                { $set: settings },
+                { upsert: true }
+            );
+            return;
+        } catch (err) {
+            console.error('MongoDB saveAdminSettings error:', err);
+        }
+    }
+    // Fallback to JSON
+    fs.writeFileSync(ADMIN_SETTINGS_FILE, JSON.stringify(settings, null, 2));
 }
 
 app.use((req, res, next) => {
-    const blockedFiles = ['/users.json', '/messages.json', '/shame-board.json'];
+    const blockedFiles = ['/users.json', '/messages.json', '/shame-board.json', '/admin-settings.json', '/login-logs.json'];
     if (blockedFiles.includes(req.path)) {
         return res.status(403).json({ error: 'Access denied' });
     }
@@ -220,11 +289,9 @@ app.post('/api/register', async (req, res) => {
         const { username, password } = req.body;
 
         // Check if registration is enabled
-        if (adminSettingsCollection) {
-            const settings = await adminSettingsCollection.findOne({ _id: 'config' });
-            if (settings?.registrationEnabled === false) {
-                return res.status(403).json({ error: 'Регистрация временно отключена' });
-            }
+        const settings = await loadAdminSettings();
+        if (settings.registrationEnabled === false) {
+            return res.status(403).json({ error: 'Регистрация временно отключена' });
         }
 
         if (!username || !password) {
@@ -579,19 +646,31 @@ app.post('/api/admin/top-users', async (req, res) => {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
-        if (!messagesCollection) {
-            return res.json({ success: true, users: [] });
+        let topUsers = [];
+
+        if (messagesCollection) {
+            const pipeline = [
+                { $group: { _id: '$from', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 10 }
+            ];
+            topUsers = await messagesCollection.aggregate(pipeline).toArray();
+        } else {
+            // Fallback to JSON
+            const messages = await loadMessages();
+            const userCounts = {};
+            messages.forEach(msg => {
+                if (msg.from) {
+                    userCounts[msg.from] = (userCounts[msg.from] || 0) + 1;
+                }
+            });
+            topUsers = Object.entries(userCounts)
+                .map(([username, count]) => ({ _id: username, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
         }
 
-        const pipeline = [
-            { $group: { _id: '$from', count: { $sum: 1 } } },
-            { $sort: { count: -1 } },
-            { $limit: 10 }
-        ];
-
-        const topUsers = await messagesCollection.aggregate(pipeline).toArray();
         const result = topUsers.map(u => ({ username: u._id, messageCount: u.count }));
-
         res.json({ success: true, users: result });
     } catch (err) {
         console.error('Get top users error:', err);
@@ -608,14 +687,9 @@ app.post('/api/admin/announcement', async (req, res) => {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
-        if (!adminSettingsCollection) {
-            return res.status(500).json({ error: 'База данных недоступна' });
-        }
-
-        await adminSettingsCollection.updateOne(
-            { _id: 'config' },
-            { $set: { announcement: announcement || null } }
-        );
+        const settings = await loadAdminSettings();
+        settings.announcement = announcement || null;
+        await saveAdminSettings(settings);
 
         res.json({ success: true });
     } catch (err) {
@@ -626,12 +700,8 @@ app.post('/api/admin/announcement', async (req, res) => {
 
 app.get('/api/announcement', async (req, res) => {
     try {
-        if (!adminSettingsCollection) {
-            return res.json({ success: true, announcement: null });
-        }
-
-        const settings = await adminSettingsCollection.findOne({ _id: 'config' });
-        res.json({ success: true, announcement: settings?.announcement || null });
+        const settings = await loadAdminSettings();
+        res.json({ success: true, announcement: settings.announcement || null });
     } catch (err) {
         console.error('Get announcement error:', err);
         res.status(500).json({ error: 'Ошибка получения объявления' });
@@ -647,14 +717,9 @@ app.post('/api/admin/toggle-registration', async (req, res) => {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
-        if (!adminSettingsCollection) {
-            return res.status(500).json({ error: 'База данных недоступна' });
-        }
-
-        await adminSettingsCollection.updateOne(
-            { _id: 'config' },
-            { $set: { registrationEnabled: enabled } }
-        );
+        const settings = await loadAdminSettings();
+        settings.registrationEnabled = enabled;
+        await saveAdminSettings(settings);
 
         res.json({ success: true, enabled });
     } catch (err) {
@@ -665,12 +730,8 @@ app.post('/api/admin/toggle-registration', async (req, res) => {
 
 app.get('/api/registration-status', async (req, res) => {
     try {
-        if (!adminSettingsCollection) {
-            return res.json({ success: true, enabled: true });
-        }
-
-        const settings = await adminSettingsCollection.findOne({ _id: 'config' });
-        res.json({ success: true, enabled: settings?.registrationEnabled !== false });
+        const settings = await loadAdminSettings();
+        res.json({ success: true, enabled: settings.registrationEnabled !== false });
     } catch (err) {
         console.error('Get registration status error:', err);
         res.status(500).json({ error: 'Ошибка получения статуса' });
@@ -686,16 +747,22 @@ app.post('/api/admin/ip-history', async (req, res) => {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
-        if (!loginLogsCollection) {
-            return res.json({ success: true, history: [] });
-        }
+        let logs = [];
 
-        const query = username ? { username } : {};
-        const logs = await loginLogsCollection
-            .find(query)
-            .sort({ timestamp: -1 })
-            .limit(100)
-            .toArray();
+        if (loginLogsCollection) {
+            const query = username ? { username } : {};
+            logs = await loginLogsCollection
+                .find(query)
+                .sort({ timestamp: -1 })
+                .limit(100)
+                .toArray();
+        } else {
+            // Fallback to JSON
+            logs = await getLoginLogs();
+            if (username) {
+                logs = logs.filter(log => log.username === username);
+            }
+        }
 
         res.json({ success: true, history: logs });
     } catch (err) {
@@ -706,20 +773,25 @@ app.post('/api/admin/ip-history', async (req, res) => {
 
 app.post('/api/admin/block-ip', async (req, res) => {
     try {
-        const { password, ip } = req.body;
+        const { password, ip, reason } = req.body;
 
         if (password !== ADMIN_PASSWORD) {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
-        if (!adminSettingsCollection) {
-            return res.status(500).json({ error: 'База данных недоступна' });
-        }
-
-        await adminSettingsCollection.updateOne(
-            { _id: 'config' },
-            { $addToSet: { blockedIPs: ip } }
+        const settings = await loadAdminSettings();
+        const exists = settings.blockedIPs.find(b =>
+            typeof b === 'string' ? b === ip : b.ip === ip
         );
+
+        if (!exists) {
+            settings.blockedIPs.push({
+                ip: ip,
+                reason: reason || 'Нарушение правил',
+                blockedAt: new Date().toISOString()
+            });
+            await saveAdminSettings(settings);
+        }
 
         res.json({ success: true });
     } catch (err) {
@@ -736,14 +808,11 @@ app.post('/api/admin/unblock-ip', async (req, res) => {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
-        if (!adminSettingsCollection) {
-            return res.status(500).json({ error: 'База данных недоступна' });
-        }
-
-        await adminSettingsCollection.updateOne(
-            { _id: 'config' },
-            { $pull: { blockedIPs: ip } }
+        const settings = await loadAdminSettings();
+        settings.blockedIPs = settings.blockedIPs.filter(blockedIP =>
+            typeof blockedIP === 'string' ? blockedIP !== ip : blockedIP.ip !== ip
         );
+        await saveAdminSettings(settings);
 
         res.json({ success: true });
     } catch (err) {
@@ -760,12 +829,8 @@ app.post('/api/admin/blocked-ips', async (req, res) => {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
-        if (!adminSettingsCollection) {
-            return res.json({ success: true, ips: [] });
-        }
-
-        const settings = await adminSettingsCollection.findOne({ _id: 'config' });
-        res.json({ success: true, ips: settings?.blockedIPs || [] });
+        const settings = await loadAdminSettings();
+        res.json({ success: true, ips: settings.blockedIPs || [] });
     } catch (err) {
         console.error('Get blocked IPs error:', err);
         res.status(500).json({ error: 'Ошибка получения списка' });
@@ -783,10 +848,14 @@ io.on('connection', (socket) => {
     socket.on('auth', async (token) => {
         try {
             // Check if IP is blocked
-            if (adminSettingsCollection) {
-                const settings = await adminSettingsCollection.findOne({ _id: 'config' });
-                if (settings?.blockedIPs?.includes(clientIP)) {
-                    socket.emit('auth-error', 'Ваш IP-адрес заблокирован');
+            const settings = await loadAdminSettings();
+            if (settings.blockedIPs && settings.blockedIPs.length > 0) {
+                const blocked = settings.blockedIPs.find(b =>
+                    typeof b === 'string' ? b === clientIP : b.ip === clientIP
+                );
+                if (blocked) {
+                    const reason = typeof blocked === 'string' ? 'Нарушение правил' : (blocked.reason || 'Нарушение правил');
+                    socket.emit('auth-error', `Ваш IP-адрес заблокирован. Причина: ${reason}`);
                     socket.disconnect();
                     return;
                 }
@@ -801,14 +870,12 @@ io.on('connection', (socket) => {
             const avatar = user?.avatar || null;
 
             // Log login with IP
-            if (loginLogsCollection) {
-                await loginLogsCollection.insertOne({
-                    username: decoded.username,
-                    ip: clientIP,
-                    timestamp: new Date(),
-                    userAgent: socket.handshake.headers['user-agent']
-                });
-            }
+            await saveLoginLog({
+                username: decoded.username,
+                ip: clientIP,
+                timestamp: new Date(),
+                userAgent: socket.handshake.headers['user-agent']
+            });
 
             onlineUsers.set(socket.id, {
                 id: socket.id,

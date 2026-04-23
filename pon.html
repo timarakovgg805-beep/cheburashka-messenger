@@ -1817,11 +1817,6 @@
                     <button class="avatar-upload-btn" onclick="showTopUsers()" style="width: 100%; margin-bottom: 10px;">Показать статистику</button>
                     <div id="topUsersList" style="display: none; max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
 
-                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Объявление</h4>
-                    <textarea id="announcementInput" placeholder="Текст объявления (будет показано при входе)" style="width: 100%; padding: 10px; background: var(--bg-modifier); border: 1px solid var(--bg-tertiary); border-radius: 4px; color: var(--text-normal); margin-bottom: 10px; min-height: 80px; resize: vertical;"></textarea>
-                    <button class="avatar-upload-btn" onclick="saveAnnouncement()" style="width: 100%; margin-bottom: 10px;">Сохранить объявление</button>
-                    <button class="avatar-upload-btn" onclick="clearAnnouncement()" style="width: 100%; margin-bottom: 10px; background: var(--bg-modifier); color: var(--text-normal);">Очистить объявление</button>
-
                     <h4 style="margin-top: 15px; margin-bottom: 10px;">Регистрация</h4>
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                         <label style="flex: 1;">Разрешить регистрацию новых пользователей:</label>
@@ -2323,9 +2318,6 @@
 
                     // Загружаем статус регистрации
                     loadRegistrationStatus();
-
-                    // Загружаем текущее объявление
-                    loadAnnouncement();
                 } else {
                     alert('Неверный пароль');
                 }
@@ -2522,54 +2514,6 @@
             }
         }
 
-        async function saveAnnouncement() {
-            const password = document.getElementById('adminPasswordInput').value;
-            const announcement = document.getElementById('announcementInput').value.trim();
-
-            try {
-                const response = await fetch('/api/admin/announcement', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password, announcement })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('Объявление сохранено');
-                } else {
-                    alert(data.error || 'Ошибка сохранения');
-                }
-            } catch (err) {
-                console.error('Save announcement error:', err);
-                alert('Ошибка сохранения объявления');
-            }
-        }
-
-        async function clearAnnouncement() {
-            const password = document.getElementById('adminPasswordInput').value;
-
-            try {
-                const response = await fetch('/api/admin/announcement', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password, announcement: null })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    document.getElementById('announcementInput').value = '';
-                    alert('Объявление удалено');
-                } else {
-                    alert(data.error || 'Ошибка удаления');
-                }
-            } catch (err) {
-                console.error('Clear announcement error:', err);
-                alert('Ошибка удаления объявления');
-            }
-        }
-
         async function toggleRegistration() {
             const password = document.getElementById('adminPasswordInput').value;
             const enabled = document.getElementById('registrationToggle').checked;
@@ -2761,30 +2705,6 @@
                 }
             } catch (err) {
                 console.error('Load registration status error:', err);
-            }
-        }
-
-        async function loadAnnouncement() {
-            try {
-                const response = await fetch('/api/announcement');
-                const data = await response.json();
-                if (data.success && data.announcement) {
-                    document.getElementById('announcementInput').value = data.announcement;
-                }
-            } catch (err) {
-                console.error('Load announcement error:', err);
-            }
-        }
-
-        async function checkAndShowAnnouncement() {
-            try {
-                const response = await fetch('/api/announcement');
-                const data = await response.json();
-                if (data.success && data.announcement) {
-                    alert(`📢 Объявление:\n\n${data.announcement}`);
-                }
-            } catch (err) {
-                console.error('Check announcement error:', err);
             }
         }
 
@@ -3246,8 +3166,6 @@
             // Загружаем настройки пользователя
             userSettings = loadUserSettings();
 
-            // Проверяем и показываем объявление
-            checkAndShowAnnouncement();
             applyTheme(userSettings.theme || 'dark');
             if (userSettings.theme === 'light') {
                 applyGradient(userSettings.gradient);

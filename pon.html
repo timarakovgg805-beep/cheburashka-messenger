@@ -1812,7 +1812,34 @@
                     <input type="text" id="shameBoardNameInput" placeholder="Название доски позора" style="width: 100%; padding: 10px; background: var(--bg-modifier); border: 1px solid var(--bg-tertiary); border-radius: 4px; color: var(--text-normal); margin-bottom: 10px;">
                     <button class="avatar-upload-btn" onclick="renameShameboard()" style="width: 100%; margin-bottom: 10px;">Переименовать доску позора</button>
                     <button class="avatar-upload-btn" onclick="clearShameBoard()" style="width: 100%; margin-bottom: 10px; background: #ed4245; color: white;">Очистить доску позора</button>
-                    <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal);">Выйти</button>
+
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Топ активных пользователей</h4>
+                    <button class="avatar-upload-btn" onclick="showTopUsers()" style="width: 100%; margin-bottom: 10px;">Показать статистику</button>
+                    <div id="topUsersList" style="display: none; max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
+
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Объявление</h4>
+                    <textarea id="announcementInput" placeholder="Текст объявления (будет показано при входе)" style="width: 100%; padding: 10px; background: var(--bg-modifier); border: 1px solid var(--bg-tertiary); border-radius: 4px; color: var(--text-normal); margin-bottom: 10px; min-height: 80px; resize: vertical;"></textarea>
+                    <button class="avatar-upload-btn" onclick="saveAnnouncement()" style="width: 100%; margin-bottom: 10px;">Сохранить объявление</button>
+                    <button class="avatar-upload-btn" onclick="clearAnnouncement()" style="width: 100%; margin-bottom: 10px; background: var(--bg-modifier); color: var(--text-normal);">Очистить объявление</button>
+
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Регистрация</h4>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <label style="flex: 1;">Разрешить регистрацию новых пользователей:</label>
+                        <input type="checkbox" id="registrationToggle" onchange="toggleRegistration()" style="width: 20px; height: 20px; cursor: pointer;">
+                    </div>
+
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">История IP-адресов</h4>
+                    <input type="text" id="ipHistoryUsername" placeholder="Имя пользователя (опционально)" style="width: 100%; padding: 10px; background: var(--bg-modifier); border: 1px solid var(--bg-tertiary); border-radius: 4px; color: var(--text-normal); margin-bottom: 10px;">
+                    <button class="avatar-upload-btn" onclick="showIPHistory()" style="width: 100%; margin-bottom: 10px;">Показать историю</button>
+                    <div id="ipHistoryList" style="display: none; max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
+
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Блокировка IP</h4>
+                    <input type="text" id="blockIPInput" placeholder="IP-адрес для блокировки" style="width: 100%; padding: 10px; background: var(--bg-modifier); border: 1px solid var(--bg-tertiary); border-radius: 4px; color: var(--text-normal); margin-bottom: 10px;">
+                    <button class="avatar-upload-btn" onclick="blockIP()" style="width: 100%; margin-bottom: 10px; background: #ed4245; color: white;">Заблокировать IP</button>
+                    <button class="avatar-upload-btn" onclick="showBlockedIPs()" style="width: 100%; margin-bottom: 10px;">Показать заблокированные IP</button>
+                    <div id="blockedIPsList" style="display: none; max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
+
+                    <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal); margin-top: 15px;">Выйти</button>
                 </div>
             </div>
 
@@ -2292,6 +2319,12 @@
 
                     // Загружаем текущее название доски позора
                     loadShameBoardName();
+
+                    // Загружаем статус регистрации
+                    loadRegistrationStatus();
+
+                    // Загружаем текущее объявление
+                    loadAnnouncement();
                 } else {
                     alert('Неверный пароль');
                 }
@@ -2448,6 +2481,294 @@
             } catch (err) {
                 console.error('Show login logs error:', err);
                 alert('Ошибка загрузки логов входов');
+            }
+        }
+
+        async function showTopUsers() {
+            const password = document.getElementById('adminPasswordInput').value;
+            const container = document.getElementById('topUsersList');
+
+            try {
+                const response = await fetch('/api/admin/top-users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    container.style.display = 'block';
+
+                    if (data.users.length === 0) {
+                        container.innerHTML = '<div style="color: var(--text-muted); text-align: center;">Нет данных</div>';
+                        return;
+                    }
+
+                    let html = '<div style="color: var(--text-normal);"><strong>Топ-10 активных пользователей:</strong><br><br>';
+                    data.users.forEach((user, i) => {
+                        html += `${i + 1}. <strong>${user.username}</strong> - ${user.messageCount} сообщений<br>`;
+                    });
+                    html += '</div>';
+
+                    container.innerHTML = html;
+                } else {
+                    alert(data.error || 'Ошибка загрузки статистики');
+                }
+            } catch (err) {
+                console.error('Show top users error:', err);
+                alert('Ошибка загрузки статистики');
+            }
+        }
+
+        async function saveAnnouncement() {
+            const password = document.getElementById('adminPasswordInput').value;
+            const announcement = document.getElementById('announcementInput').value.trim();
+
+            try {
+                const response = await fetch('/api/admin/announcement', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, announcement })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Объявление сохранено');
+                } else {
+                    alert(data.error || 'Ошибка сохранения');
+                }
+            } catch (err) {
+                console.error('Save announcement error:', err);
+                alert('Ошибка сохранения объявления');
+            }
+        }
+
+        async function clearAnnouncement() {
+            const password = document.getElementById('adminPasswordInput').value;
+
+            try {
+                const response = await fetch('/api/admin/announcement', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, announcement: null })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('announcementInput').value = '';
+                    alert('Объявление удалено');
+                } else {
+                    alert(data.error || 'Ошибка удаления');
+                }
+            } catch (err) {
+                console.error('Clear announcement error:', err);
+                alert('Ошибка удаления объявления');
+            }
+        }
+
+        async function toggleRegistration() {
+            const password = document.getElementById('adminPasswordInput').value;
+            const enabled = document.getElementById('registrationToggle').checked;
+
+            try {
+                const response = await fetch('/api/admin/toggle-registration', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, enabled })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(enabled ? 'Регистрация включена' : 'Регистрация отключена');
+                } else {
+                    alert(data.error || 'Ошибка изменения настройки');
+                    document.getElementById('registrationToggle').checked = !enabled;
+                }
+            } catch (err) {
+                console.error('Toggle registration error:', err);
+                alert('Ошибка изменения настройки');
+                document.getElementById('registrationToggle').checked = !enabled;
+            }
+        }
+
+        async function showIPHistory() {
+            const password = document.getElementById('adminPasswordInput').value;
+            const username = document.getElementById('ipHistoryUsername').value.trim();
+            const container = document.getElementById('ipHistoryList');
+
+            try {
+                const response = await fetch('/api/admin/ip-history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, username: username || undefined })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    container.style.display = 'block';
+
+                    if (data.history.length === 0) {
+                        container.innerHTML = '<div style="color: var(--text-muted); text-align: center;">Нет данных</div>';
+                        return;
+                    }
+
+                    let html = '<div style="color: var(--text-normal);"><strong>История входов:</strong><br><br>';
+                    data.history.forEach((log, i) => {
+                        const date = new Date(log.timestamp).toLocaleString('ru-RU');
+                        html += `${i + 1}. <strong>${log.username}</strong><br>`;
+                        html += `IP: <span style="color: var(--brand);">${log.ip}</span><br>`;
+                        html += `<span style="color: var(--text-muted); font-size: 11px;">${date}</span><br><br>`;
+                    });
+                    html += '</div>';
+
+                    container.innerHTML = html;
+                } else {
+                    alert(data.error || 'Ошибка загрузки истории');
+                }
+            } catch (err) {
+                console.error('Show IP history error:', err);
+                alert('Ошибка загрузки истории');
+            }
+        }
+
+        async function blockIP() {
+            const password = document.getElementById('adminPasswordInput').value;
+            const ip = document.getElementById('blockIPInput').value.trim();
+
+            if (!ip) {
+                alert('Введите IP-адрес');
+                return;
+            }
+
+            if (!confirm(`Заблокировать IP ${ip}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/block-ip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, ip })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('blockIPInput').value = '';
+                    alert('IP заблокирован');
+                } else {
+                    alert(data.error || 'Ошибка блокировки');
+                }
+            } catch (err) {
+                console.error('Block IP error:', err);
+                alert('Ошибка блокировки IP');
+            }
+        }
+
+        async function showBlockedIPs() {
+            const password = document.getElementById('adminPasswordInput').value;
+            const container = document.getElementById('blockedIPsList');
+
+            try {
+                const response = await fetch('/api/admin/blocked-ips', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    container.style.display = 'block';
+
+                    if (data.ips.length === 0) {
+                        container.innerHTML = '<div style="color: var(--text-muted); text-align: center;">Нет заблокированных IP</div>';
+                        return;
+                    }
+
+                    let html = '<div style="color: var(--text-normal);"><strong>Заблокированные IP:</strong><br><br>';
+                    data.ips.forEach((ip, i) => {
+                        html += `${i + 1}. <span style="color: var(--brand);">${ip}</span> `;
+                        html += `<button onclick="unblockIP('${ip}')" style="background: #43b581; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Разблокировать</button><br>`;
+                    });
+                    html += '</div>';
+
+                    container.innerHTML = html;
+                } else {
+                    alert(data.error || 'Ошибка загрузки списка');
+                }
+            } catch (err) {
+                console.error('Show blocked IPs error:', err);
+                alert('Ошибка загрузки списка');
+            }
+        }
+
+        async function unblockIP(ip) {
+            const password = document.getElementById('adminPasswordInput').value;
+
+            if (!confirm(`Разблокировать IP ${ip}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/unblock-ip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, ip })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('IP разблокирован');
+                    showBlockedIPs();
+                } else {
+                    alert(data.error || 'Ошибка разблокировки');
+                }
+            } catch (err) {
+                console.error('Unblock IP error:', err);
+                alert('Ошибка разблокировки IP');
+            }
+        }
+
+        async function loadRegistrationStatus() {
+            try {
+                const response = await fetch('/api/registration-status');
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('registrationToggle').checked = data.enabled;
+                }
+            } catch (err) {
+                console.error('Load registration status error:', err);
+            }
+        }
+
+        async function loadAnnouncement() {
+            try {
+                const response = await fetch('/api/announcement');
+                const data = await response.json();
+                if (data.success && data.announcement) {
+                    document.getElementById('announcementInput').value = data.announcement;
+                }
+            } catch (err) {
+                console.error('Load announcement error:', err);
+            }
+        }
+
+        async function checkAndShowAnnouncement() {
+            try {
+                const response = await fetch('/api/announcement');
+                const data = await response.json();
+                if (data.success && data.announcement) {
+                    alert(`📢 Объявление:\n\n${data.announcement}`);
+                }
+            } catch (err) {
+                console.error('Check announcement error:', err);
             }
         }
 
@@ -2908,6 +3229,9 @@
 
             // Загружаем настройки пользователя
             userSettings = loadUserSettings();
+
+            // Проверяем и показываем объявление
+            checkAndShowAnnouncement();
             applyTheme(userSettings.theme || 'dark');
             if (userSettings.theme === 'light') {
                 applyGradient(userSettings.gradient);

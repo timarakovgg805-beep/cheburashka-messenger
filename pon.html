@@ -2,7 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#36393f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Чебусрашка Messenger</title>
     <style>
         :root {
@@ -19,6 +22,8 @@
             --interactive-active: #fff;
             --brand: #5865f2;
             --brand-hover: #4752c4;
+            --app-height: 100vh;
+            --mobile-input-bottom: 0px;
         }
 
         * {
@@ -30,7 +35,7 @@
         body {
             font-family: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background: var(--bg-tertiary);
-            height: 100vh;
+            height: var(--app-height);
             display: flex;
             overflow: hidden;
             color: var(--text-normal);
@@ -38,7 +43,7 @@
 
         .container {
             width: 100%;
-            height: 100vh;
+            height: var(--app-height);
             background: var(--bg-primary);
             display: flex;
             overflow: hidden;
@@ -427,7 +432,22 @@
 
         .input-area {
             padding: 16px;
+            padding-top: 24px;
             background: var(--bg-primary);
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .input-area {
+                position: fixed;
+                bottom: var(--mobile-input-bottom);
+                left: 0;
+                right: 0;
+                z-index: 100;
+                padding-bottom: env(safe-area-inset-bottom, 20px);
+            }
         }
 
         .input-wrapper {
@@ -437,6 +457,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex: 1;
         }
 
         .input-area input[type="text"] {
@@ -628,21 +649,27 @@
         }
 
         .settings-close-btn {
-            width: 100%;
-            padding: 12px;
-            background: var(--bg-modifier);
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            background: transparent;
             color: var(--text-normal);
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            margin-top: 20px;
-            transition: background 0.2s;
+            font-size: 28px;
+            font-weight: 300;
+            line-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .settings-close-btn:hover {
-            background: var(--bg-tertiary);
+            background: var(--bg-modifier);
         }
 
         .call-buttons {
@@ -1420,7 +1447,7 @@
                 width: 100%;
                 position: absolute;
                 z-index: 10;
-                height: 100%;
+                height: var(--app-height);
                 transition: transform 0.3s;
             }
 
@@ -1444,13 +1471,15 @@
 
             .call-container {
                 width: 100%;
-                height: 100vh;
+                height: var(--app-height);
                 border-radius: 0;
             }
 
             .input-area {
-                position: sticky;
-                bottom: 0;
+                position: fixed;
+                bottom: var(--mobile-input-bottom);
+                left: 0;
+                right: 0;
                 z-index: 100;
                 padding-bottom: env(safe-area-inset-bottom, 20px);
             }
@@ -1545,6 +1574,72 @@
         .crop-btn-cancel:hover {
             background: #4a4d54;
         }
+
+        /* Стили для слайдера отступа */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--brand);
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--brand);
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Дополнительные стили для мобильных браузеров */
+        @supports (-webkit-touch-callout: none) {
+            /* iOS Safari */
+            body {
+                height: -webkit-fill-available;
+            }
+            .container {
+                height: -webkit-fill-available;
+            }
+        }
+
+        /* Предотвращение bounce эффекта на iOS */
+        body {
+            overscroll-behavior-y: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Улучшение производительности на мобильных */
+        .sidebar, .chat-area, .messages-container {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+
+        /* Анимации для уведомлений */
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1605,15 +1700,18 @@
             </div>
 
             <div class="input-area hidden" id="inputArea">
+                <div class="input-wrapper">
+                    <input type="text" id="messageInput" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
+                </div>
                 <button onclick="openFileSelector()">📎</button>
-                <input type="text" id="messageInput" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
                 <button onclick="sendMessage()">➤</button>
             </div>
         </div>
     </div>
 
-    <div class="settings-modal hidden" id="settingsModal" onclick="closeSettingsOnBackdrop(event)">
+    <div class="settings-modal hidden" id="settingsModal">
         <div class="settings-box" onclick="event.stopPropagation()">
+            <button class="settings-close-btn" onclick="closeSettings()">×</button>
             <h2>Настройки</h2>
 
             <div class="settings-section">
@@ -1647,6 +1745,15 @@
                     <button class="font-size-btn" data-size="small" onclick="changeFontSize('small')" style="flex: 1; padding: 12px; border: 2px solid transparent; background: var(--bg-modifier); color: var(--text-normal); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.3s;">Мелкий</button>
                     <button class="font-size-btn active" data-size="medium" onclick="changeFontSize('medium')" style="flex: 1; padding: 12px; border: 2px solid var(--brand); background: var(--bg-modifier); color: var(--text-normal); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;">Средний</button>
                     <button class="font-size-btn" data-size="large" onclick="changeFontSize('large')" style="flex: 1; padding: 12px; border: 2px solid transparent; background: var(--bg-modifier); color: var(--text-normal); border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.3s;">Крупный</button>
+                </div>
+            </div>
+
+            <div class="settings-section" id="inputPaddingSection" style="display: none;">
+                <h3>Положение окна ввода (мобильные)</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Настройте отступ снизу (0-200px). Чем больше значение, тем выше окно ввода</p>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="number" id="inputPaddingInput" min="0" max="200" value="0" style="flex: 1; padding: 12px; border: 2px solid var(--bg-modifier); border-radius: 8px; background: var(--bg-modifier); color: var(--text-normal); font-size: 14px;">
+                    <button onclick="applyInputPadding()" class="avatar-upload-btn" style="padding: 12px 20px; margin: 0;">Применить</button>
                 </div>
             </div>
 
@@ -1714,7 +1821,6 @@
                 <button class="avatar-upload-btn" onclick="showChangelog()" style="width: 100%;">Показать изменения</button>
             </div>
 
-            <button class="settings-close-btn" onclick="closeSettings()">Закрыть</button>
         </div>
     </div>
 
@@ -1812,6 +1918,43 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        // Определение браузера и устройства
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+        const isIOS = /iphone|ipad|ipod/.test(userAgent);
+        const isAndroid = /android/.test(userAgent);
+        const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
+        const isChrome = /chrome/.test(userAgent) && !/edge/.test(userAgent);
+
+        // Функция для установки правильной высоты viewport
+        function setAppHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+        }
+
+        // Устанавливаем высоту при загрузке
+        setAppHeight();
+
+        // Обновляем при изменении размера окна и ориентации
+        window.addEventListener('resize', setAppHeight);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(setAppHeight, 100);
+        });
+
+        // Для iOS: обновляем при скролле (когда скрывается/показывается адресная строка)
+        if (isIOS) {
+            let ticking = false;
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        setAppHeight();
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            });
+        }
+
         let socket;
         let currentUser;
         let selectedUser = null;
@@ -1819,7 +1962,7 @@
         let authToken = sessionStorage.getItem('pon_token');
         let isRegisterMode = false;
         let onlineUsers = [];
-        let userSettings = null;
+        let userSettings = { gradient: 'default', avatar: null, theme: 'dark', inputPadding: 0 };
         let peerConnection = null;
         let localStream = null;
         let currentCallType = null;
@@ -1835,9 +1978,9 @@
         };
 
         function loadUserSettings() {
-            if (!currentUser) return { gradient: 'default', avatar: null, theme: 'dark' };
+            if (!currentUser) return { gradient: 'default', avatar: null, theme: 'dark', inputPadding: 0 };
             const key = `pon_settings_${currentUser}`;
-            return JSON.parse(localStorage.getItem(key) || '{"gradient":"default","avatar":null,"theme":"dark"}');
+            return JSON.parse(localStorage.getItem(key) || '{"gradient":"default","avatar":null,"theme":"dark","inputPadding":0}');
         }
 
         function saveUserSettings() {
@@ -1855,6 +1998,13 @@
         function openSettings() {
             document.getElementById('settingsModal').classList.remove('hidden');
             updateAvatarPreview();
+
+            // Показываем секцию отступа только на мобильных
+            if (isMobile) {
+                document.getElementById('inputPaddingSection').style.display = 'block';
+                const input = document.getElementById('inputPaddingInput');
+                input.value = userSettings.inputPadding || 0;
+            }
 
             // Обновляем активную тему
             document.querySelectorAll('.theme-btn').forEach(btn => {
@@ -1965,10 +2115,24 @@
             }
         }
 
-        function closeSettingsOnBackdrop(event) {
-            if (event.target.id === 'settingsModal') {
-                closeSettings();
-            }
+        function applyInputPadding() {
+            const input = document.getElementById('inputPaddingInput');
+            let value = parseInt(input.value);
+
+            // Проверяем границы
+            if (isNaN(value) || value < 0) value = 0;
+            if (value > 200) value = 200;
+
+            input.value = value;
+
+            // Применяем изменение
+            document.documentElement.style.setProperty('--mobile-input-bottom', value + 'px');
+
+            // Сохраняем
+            userSettings.inputPadding = value;
+            saveUserSettings();
+
+            console.log('Отступ применен:', value + 'px');
         }
 
         function selectConnectionType(type) {
@@ -2403,7 +2567,7 @@
             });
         }
 
-        function showShameBoard() {
+        async function showShameBoard() {
             const usersList = document.getElementById('usersList');
             usersList.innerHTML = '';
 
@@ -2750,6 +2914,11 @@
                 if (userSettings.sidebarColor) {
                     document.querySelector('.sidebar').style.background = userSettings.sidebarColor;
                 }
+            }
+
+            // Применяем настройку отступа для мобильных
+            if (isMobile && userSettings.inputPadding) {
+                document.documentElement.style.setProperty('--mobile-input-bottom', userSettings.inputPadding + 'px');
             }
 
             // Настройка drag-and-drop для файлов

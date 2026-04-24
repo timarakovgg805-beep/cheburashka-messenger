@@ -78,6 +78,26 @@
             align-items: center;
         }
 
+        .current-user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .current-user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--brand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            color: white;
+            flex-shrink: 0;
+        }
+
         .logout-btn, .settings-btn {
             background: var(--bg-modifier);
             border: none;
@@ -213,6 +233,11 @@
             background: #3ba55d;
         }
 
+        .status-mandarin {
+            font-size: 10px;
+            line-height: 1;
+        }
+
         .chat-area {
             flex: 1;
             display: flex;
@@ -246,7 +271,7 @@
         .chat-header-info h2 {
             font-size: 16px;
             font-weight: 600;
-            color: white;
+            color: var(--text-normal);
         }
 
         .chat-header-info p {
@@ -565,7 +590,7 @@
         .settings-box h2 {
             font-size: 24px;
             margin-bottom: 30px;
-            color: white;
+            color: var(--text-normal);
             font-weight: 600;
         }
 
@@ -576,10 +601,18 @@
         .settings-section h3 {
             font-size: 14px;
             margin-bottom: 15px;
-            color: var(--text-muted);
+            color: var(--text-normal);
             text-transform: uppercase;
             font-weight: 600;
             letter-spacing: 0.5px;
+        }
+
+        .settings-section label {
+            color: var(--text-normal);
+        }
+
+        .settings-section p {
+            color: var(--text-normal);
         }
 
         .gradient-options {
@@ -655,7 +688,7 @@
             width: 32px;
             height: 32px;
             padding: 0;
-            background: transparent;
+            background: var(--bg-modifier);
             color: var(--text-normal);
             border: none;
             border-radius: 4px;
@@ -669,7 +702,8 @@
         }
 
         .settings-close-btn:hover {
-            background: var(--bg-modifier);
+            background: var(--bg-tertiary);
+            color: var(--interactive-hover);
         }
 
         .call-buttons {
@@ -1662,7 +1696,10 @@
             <div class="sidebar-header">
                 <h1>Чебусрашка</h1>
                 <div class="current-user">
-                    <span id="currentUser"></span>
+                    <div class="current-user-info">
+                        <div class="current-user-avatar" id="currentUserAvatar"></div>
+                        <span id="currentUser"></span>
+                    </div>
                     <div>
                         <button class="settings-btn" onclick="openSettings()">⚙️</button>
                         <button class="logout-btn" onclick="logout()">Выйти</button>
@@ -1670,9 +1707,9 @@
                 </div>
             </div>
             <div class="users-tabs">
-                <button class="users-tab active" onclick="switchTab('online')">В сети</button>
-                <button class="users-tab" onclick="switchTab('recent')">Недавние</button>
-                <button class="users-tab" onclick="switchTab('shame')">Доска позора</button>
+                <button class="users-tab active" onclick="switchTab('online')" data-tab="online">В сети</button>
+                <button class="users-tab" onclick="switchTab('recent')" data-tab="recent">Недавние</button>
+                <button class="users-tab" onclick="switchTab('shame')" data-tab="shame" id="shameBoardTab">Доска позора</button>
             </div>
             <div class="users-list" id="usersList"></div>
         </div>
@@ -1716,9 +1753,10 @@
 
             <div class="settings-section">
                 <h3>Тема интерфейса</h3>
-                <div style="display: flex; gap: 10px;">
-                    <button class="theme-btn" data-theme="dark" onclick="selectTheme('dark')" style="flex: 1; padding: 10px; background: var(--bg-secondary); color: var(--text-normal); border: 2px solid var(--brand); border-radius: 4px; cursor: pointer; font-weight: 500;">Темная</button>
-                    <button class="theme-btn" data-theme="light" onclick="selectTheme('light')" style="flex: 1; padding: 10px; background: #f0f0f0; color: #333; border: 2px solid transparent; border-radius: 4px; cursor: pointer; font-weight: 500;">Светлая</button>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="theme-btn" data-theme="dark" onclick="selectTheme('dark')" style="flex: 1; min-width: 100px; padding: 10px; background: var(--bg-secondary); color: var(--text-normal); border: 2px solid var(--brand); border-radius: 4px; cursor: pointer; font-weight: 500;">Темная</button>
+                    <button class="theme-btn" data-theme="light" onclick="selectTheme('light')" style="flex: 1; min-width: 100px; padding: 10px; background: #f0f0f0; color: #333; border: 2px solid transparent; border-radius: 4px; cursor: pointer; font-weight: 500;">Светлая</button>
+                    <button class="theme-btn" data-theme="original" onclick="selectTheme('original')" style="flex: 1; min-width: 100px; padding: 10px; background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%); color: white; border: 2px solid transparent; border-radius: 4px; cursor: pointer; font-weight: 500;">Оригинал</button>
                 </div>
             </div>
 
@@ -1811,6 +1849,14 @@
                     <h4 style="margin-top: 15px; margin-bottom: 10px;">Доска позора</h4>
                     <input type="text" id="shameBoardNameInput" placeholder="Название доски позора" style="width: 100%; padding: 10px; background: var(--bg-modifier); border: 1px solid var(--bg-tertiary); border-radius: 4px; color: var(--text-normal); margin-bottom: 10px;">
                     <button class="avatar-upload-btn" onclick="renameShameboard()" style="width: 100%; margin-bottom: 10px;">Переименовать доску позора</button>
+
+                    <div style="margin-bottom: 10px;">
+                        <div class="avatar-preview" id="shameBoardAvatarPreview" style="width: 80px; height: 80px; margin: 0 auto 10px;"></div>
+                        <input type="file" id="shameBoardAvatarInput" accept="image/*" style="display: none;" onchange="uploadShameBoardAvatar()">
+                        <button class="avatar-upload-btn" onclick="document.getElementById('shameBoardAvatarInput').click()" style="width: 100%; margin-bottom: 5px;">Загрузить аватарку</button>
+                        <button class="avatar-upload-btn" onclick="removeShameBoardAvatar()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal);">Удалить аватарку</button>
+                    </div>
+
                     <button class="avatar-upload-btn" onclick="clearShameBoard()" style="width: 100%; margin-bottom: 10px; background: #ed4245; color: white;">Очистить доску позора</button>
 
                     <h4 style="margin-top: 15px; margin-bottom: 10px;">Топ активных пользователей</h4>
@@ -2075,6 +2121,18 @@
         function applyTheme(theme) {
             const root = document.documentElement;
 
+            // Сбрасываем все кастомные стили перед применением новой темы
+            const sidebarElements = document.querySelectorAll('.sidebar *');
+            sidebarElements.forEach(el => {
+                el.style.color = '';
+            });
+
+            // Сбрасываем стили шапки чата
+            const chatName = document.getElementById('chatName');
+            const chatStatus = document.querySelector('.chat-header-info p');
+            if (chatName) chatName.style.color = '';
+            if (chatStatus) chatStatus.style.color = '';
+
             if (theme === 'light') {
                 // Светлая тема
                 root.style.setProperty('--bg-primary', '#ffffff');
@@ -2086,6 +2144,9 @@
                 root.style.setProperty('--interactive-normal', '#4e5058');
                 root.style.setProperty('--interactive-hover', '#2e3338');
                 root.style.setProperty('--interactive-active', '#060607');
+                root.style.setProperty('--brand', '#5865f2');
+                root.style.setProperty('--brand-hover', '#4752c4');
+                root.style.setProperty('--border', '#e3e5e8');
 
                 // Применяем градиент в светлой теме
                 if (userSettings.gradient) {
@@ -2093,6 +2154,46 @@
                 }
                 if (userSettings.sidebarColor) {
                     document.querySelector('.sidebar').style.background = userSettings.sidebarColor;
+                }
+            } else if (theme === 'original') {
+                // Тема "Оригинал" - цвета Чебурашки
+                root.style.setProperty('--bg-primary', '#FFF8DC'); // Кремовый
+                root.style.setProperty('--bg-secondary', '#D2691E'); // Шоколадный
+                root.style.setProperty('--bg-tertiary', '#8B4513'); // Коричневый
+                root.style.setProperty('--bg-modifier', '#CD853F'); // Перу
+                root.style.setProperty('--text-normal', '#2F1B0C'); // Темно-коричневый
+                root.style.setProperty('--text-muted', '#654321'); // Темнее для контраста
+                root.style.setProperty('--interactive-normal', '#2F1B0C');
+                root.style.setProperty('--interactive-hover', '#000000');
+                root.style.setProperty('--interactive-active', '#000000');
+                root.style.setProperty('--brand', '#FF8C00'); // Оранжевый (мандарин)
+                root.style.setProperty('--brand-hover', '#FF7F00');
+                root.style.setProperty('--border', '#8B4513');
+
+                // Применяем градиент Чебурашки
+                const cheburashkaGradient = 'linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #CD853F 100%)';
+                document.body.style.background = cheburashkaGradient;
+                const loginModal = document.querySelector('.login-modal');
+                if (loginModal) loginModal.style.background = cheburashkaGradient;
+                const sidebarHeader = document.querySelector('.sidebar-header');
+                if (sidebarHeader) sidebarHeader.style.background = cheburashkaGradient;
+                const sidebar = document.querySelector('.sidebar');
+                if (sidebar) sidebar.style.background = 'var(--bg-secondary)';
+
+                // Обновляем цвет текста в сайдбаре и шапке чата для контраста
+                sidebarElements.forEach(el => {
+                    if (el.classList.contains('user-name') || el.classList.contains('current-user')) {
+                        el.style.color = '#FFF8DC';
+                    }
+                });
+
+                // Светлый текст в шапке чата (темный фон)
+                const chatHeader = document.querySelector('.chat-header');
+                if (chatHeader) {
+                    const chatName = document.getElementById('chatName');
+                    const chatStatus = document.querySelector('.chat-header-info p');
+                    if (chatName) chatName.style.color = '#FFF8DC';
+                    if (chatStatus) chatStatus.style.color = '#FFE4B5';
                 }
             } else {
                 // Темная тема
@@ -2105,6 +2206,9 @@
                 root.style.setProperty('--interactive-normal', '#b9bbbe');
                 root.style.setProperty('--interactive-hover', '#dcddde');
                 root.style.setProperty('--interactive-active', '#fff');
+                root.style.setProperty('--brand', '#5865f2');
+                root.style.setProperty('--brand-hover', '#4752c4');
+                root.style.setProperty('--border', 'rgba(0,0,0,0.2)');
 
                 // Убираем градиенты в темной теме
                 document.body.style.background = 'var(--bg-tertiary)';
@@ -2315,6 +2419,8 @@
 
                     // Загружаем текущее название доски позора
                     loadShameBoardName();
+                    // Загружаем аватарку доски позора
+                    updateShameBoardAvatarPreview();
 
                     // Загружаем статус регистрации
                     loadRegistrationStatus();
@@ -2414,8 +2520,7 @@
 
                 if (data.success) {
                     alert('Доска позора переименована');
-                    // Обновляем список пользователей
-                    socket.emit('request-users');
+                    updateShameBoardDisplay();
                 } else {
                     alert(data.error || 'Ошибка переименования');
                 }
@@ -2434,6 +2539,131 @@
                 }
             } catch (err) {
                 console.error('Load shame board name error:', err);
+            }
+        }
+
+        async function uploadShameBoardAvatar() {
+            const file = document.getElementById('shameBoardAvatarInput').files[0];
+            if (!file) return;
+
+            const password = document.getElementById('adminPasswordInput').value;
+            if (!password) {
+                alert('Введите пароль администратора');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const response = await fetch('/api/admin/shame-board-avatar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            password,
+                            avatar: e.target.result
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('Аватарка доски позора обновлена');
+                        updateShameBoardAvatarPreview();
+                        updateShameBoardDisplay();
+                    } else {
+                        alert(data.error || 'Ошибка загрузки аватарки');
+                    }
+                } catch (err) {
+                    console.error('Upload shame board avatar error:', err);
+                    alert('Ошибка загрузки аватарки');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function removeShameBoardAvatar() {
+            const password = document.getElementById('adminPasswordInput').value;
+            if (!password) {
+                alert('Введите пароль администратора');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/shame-board-avatar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, avatar: null })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Аватарка доски позора удалена');
+                    updateShameBoardAvatarPreview();
+                    updateShameBoardDisplay();
+                } else {
+                    alert(data.error || 'Ошибка удаления аватарки');
+                }
+            } catch (err) {
+                console.error('Remove shame board avatar error:', err);
+                alert('Ошибка удаления аватарки');
+            }
+        }
+
+        async function updateShameBoardAvatarPreview() {
+            try {
+                const response = await fetch('/api/shame-board-info');
+                const data = await response.json();
+
+                const preview = document.getElementById('shameBoardAvatarPreview');
+                if (data.avatar) {
+                    preview.innerHTML = `<img src="${data.avatar}" alt="Avatar">`;
+                    preview.style.fontSize = '';
+                } else {
+                    preview.innerHTML = '🔥';
+                    preview.style.fontSize = '40px';
+                    preview.style.display = 'flex';
+                    preview.style.alignItems = 'center';
+                    preview.style.justifyContent = 'center';
+                }
+            } catch (err) {
+                console.error('Update shame board avatar preview error:', err);
+            }
+        }
+
+        async function updateShameBoardDisplay() {
+            try {
+                const response = await fetch('/api/shame-board-info');
+                const data = await response.json();
+
+                // Обновляем вкладку
+                const shameTab = document.getElementById('shameBoardTab');
+                if (shameTab) {
+                    shameTab.textContent = data.name || 'Доска позора';
+                }
+
+                // Обновляем заголовок чата если открыта доска позора
+                if (selectedUser && selectedUser.isShameBoard) {
+                    selectedUser.username = data.name || 'Доска позора';
+                    selectedUser.avatar = data.avatar;
+                    document.getElementById('chatName').textContent = selectedUser.username;
+
+                    const chatAvatar = document.getElementById('chatAvatar');
+                    if (data.avatar) {
+                        chatAvatar.innerHTML = `<img src="${data.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                        chatAvatar.style.background = '';
+                    } else {
+                        chatAvatar.innerHTML = '🔥';
+                        chatAvatar.style.background = '#ed4245';
+                    }
+                }
+
+                // Обновляем список если открыта вкладка доски позора
+                if (currentTab === 'shame') {
+                    showShameBoard();
+                }
+            } catch (err) {
+                console.error('Update shame board display error:', err);
             }
         }
 
@@ -2710,6 +2940,7 @@
 
         // Автоматическое отслеживание статуса
         document.addEventListener('visibilitychange', () => {
+            if (!socket) return;
             if (document.hidden) {
                 // Пользователь переключился на другую вкладку
                 socket.emit('user-status', { status: 'away' });
@@ -2721,16 +2952,44 @@
 
         // При закрытии вкладки
         window.addEventListener('beforeunload', () => {
-            socket.emit('user-status', { status: 'offline' });
+            if (socket) {
+                socket.emit('user-status', { status: 'offline' });
+            }
         });
 
         // Сохранение недавних пользователей
         function saveRecentUser(user) {
-            let recentUsers = JSON.parse(localStorage.getItem('recentUsers') || '[]');
-            recentUsers = recentUsers.filter(u => u.id !== user.id);
-            recentUsers.unshift(user);
-            recentUsers = recentUsers.slice(0, 10); // Храним только 10 последних
-            localStorage.setItem('recentUsers', JSON.stringify(recentUsers));
+            try {
+                let recentUsers = JSON.parse(localStorage.getItem('recentUsers') || '[]');
+
+                // Сохраняем только необходимые поля без аватара (он слишком большой)
+                const userToSave = {
+                    id: user.id,
+                    username: user.username,
+                    online: user.online
+                };
+
+                recentUsers = recentUsers.filter(u => u.id !== user.id);
+                recentUsers.unshift(userToSave);
+                recentUsers = recentUsers.slice(0, 10); // Храним только 10 последних
+                localStorage.setItem('recentUsers', JSON.stringify(recentUsers));
+            } catch (err) {
+                console.error('Save recent user error:', err);
+                // Если переполнение - очищаем и пробуем снова
+                if (err.name === 'QuotaExceededError') {
+                    localStorage.removeItem('recentUsers');
+                    try {
+                        const userToSave = {
+                            id: user.id,
+                            username: user.username,
+                            online: user.online
+                        };
+                        localStorage.setItem('recentUsers', JSON.stringify([userToSave]));
+                    } catch (e) {
+                        console.error('Failed to save even after clearing:', e);
+                    }
+                }
+            }
         }
 
         // Показать сайдбар (для мобильных)
@@ -2828,13 +3087,15 @@
             const usersList = document.getElementById('usersList');
             usersList.innerHTML = '';
 
-            // Загружаем название доски позора
+            // Загружаем информацию о доске позора
             let shameBoardName = 'Доска позора';
+            let shameBoardAvatar = null;
             try {
-                const response = await fetch('/api/shame-board-name');
+                const response = await fetch('/api/shame-board-info');
                 const data = await response.json();
                 if (data.success) {
-                    shameBoardName = data.name;
+                    shameBoardName = data.name || 'Доска позора';
+                    shameBoardAvatar = data.avatar;
                 }
             } catch (err) {
                 console.error('Error loading shame board name:', err);
@@ -2846,8 +3107,15 @@
                 shameBoardItem.classList.add('active');
             }
 
+            let avatarHtml = '';
+            if (shameBoardAvatar) {
+                avatarHtml = `<img src="${shameBoardAvatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            } else {
+                avatarHtml = '🔥';
+            }
+
             shameBoardItem.innerHTML = `
-                <div class="user-avatar" style="background: #ed4245;">🔥</div>
+                <div class="user-avatar" style="background: ${shameBoardAvatar ? '' : '#ed4245'};">${avatarHtml}</div>
                 <div class="user-info">
                     <div class="user-name">${shameBoardName}</div>
                     <div class="user-status">Общий чат</div>
@@ -2858,7 +3126,8 @@
                 selectUser({
                     id: 'shame-board',
                     username: shameBoardName,
-                    isShameBoard: true
+                    isShameBoard: true,
+                    avatar: shameBoardAvatar
                 });
             };
             usersList.appendChild(shameBoardItem);
@@ -3019,9 +3288,24 @@
                 preview.innerHTML = initial;
             }
 
+            // Обновляем аватар в шапке сайдбара
+            updateCurrentUserAvatar();
+
             // Обновляем аватар в шапке чата если открыт
             if (selectedUser) {
                 updateChatAvatar();
+            }
+        }
+
+        function updateCurrentUserAvatar() {
+            const avatarDiv = document.getElementById('currentUserAvatar');
+            if (!avatarDiv) return;
+
+            if (userSettings.avatar) {
+                avatarDiv.innerHTML = `<img src="${userSettings.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            } else {
+                const initial = currentUser ? currentUser.charAt(0).toUpperCase() : '?';
+                avatarDiv.textContent = initial;
             }
         }
 
@@ -3166,6 +3450,12 @@
             // Загружаем настройки пользователя
             userSettings = loadUserSettings();
 
+            // Обновляем аватарку в шапке
+            updateCurrentUserAvatar();
+
+            // Загружаем название доски позора для вкладки
+            updateShameBoardDisplay();
+
             applyTheme(userSettings.theme || 'dark');
             if (userSettings.theme === 'light') {
                 applyGradient(userSettings.gradient);
@@ -3242,6 +3532,15 @@
                 onlineUsers = users;
                 if (users && users.length > 0) {
                     updateUsersList(users);
+
+                    // Обновляем аватарку выбранного пользователя, если он онлайн
+                    if (selectedUser && !selectedUser.isShameBoard) {
+                        const updatedUser = users.find(u => u.id === selectedUser.id);
+                        if (updatedUser && updatedUser.avatar !== selectedUser.avatar) {
+                            selectedUser.avatar = updatedUser.avatar;
+                            updateChatHeaderAvatar();
+                        }
+                    }
                 }
             });
 
@@ -3260,6 +3559,13 @@
                 if (selectedUser && selectedUser.isShameBoard) {
                     const isOwn = from === currentUser;
                     addShameBoardMessage(message, from, isOwn);
+                }
+            });
+
+            socket.on('shame-board-cleared', () => {
+                // Если открыта доска позора, очищаем сообщения
+                if (selectedUser && selectedUser.isShameBoard) {
+                    document.getElementById('messages').innerHTML = '';
                 }
             });
 
@@ -3347,12 +3653,18 @@
             const usersList = document.getElementById('usersList');
 
             // Сохраняем текущий список для сравнения
-            const currentUsers = Array.from(usersList.children).map(item => item.dataset.userId);
-            const newUsers = users.filter(u => u.id !== socket.id).map(u => u.id);
+            const currentUsers = Array.from(usersList.children).map(item => ({
+                id: item.dataset.userId,
+                avatar: item.querySelector('.user-avatar img')?.src || null
+            }));
+            const newUsers = users.filter(u => u.id !== socket.id);
 
-            // Проверяем, изменился ли список
+            // Проверяем, изменился ли список или аватарки
             const hasChanges = currentUsers.length !== newUsers.length ||
-                               currentUsers.some((id, index) => id !== newUsers[index]);
+                               currentUsers.some((current, index) => {
+                                   const newUser = newUsers[index];
+                                   return current.id !== newUser.id || current.avatar !== newUser.avatar;
+                               });
 
             if (!hasChanges) return; // Не обновляем, если список не изменился
 
@@ -3376,17 +3688,24 @@
                 // Используем аватар из данных пользователя с сервера
                 let avatarHtml = '';
                 if (user.avatar) {
-                    avatarHtml = `<img src="${user.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    // Добавляем timestamp только для HTTP URL, не для base64
+                    const avatarSrc = user.avatar.startsWith('data:') ? user.avatar : `${user.avatar}?t=${Date.now()}`;
+                    avatarHtml = `<img src="${avatarSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 } else {
                     avatarHtml = initial;
                 }
+
+                // Определяем индикатор статуса в зависимости от темы
+                const statusIndicator = userSettings.theme === 'original'
+                    ? '<span class="status-mandarin">🍊</span>'
+                    : '<div class="status-dot"></div>';
 
                 userItem.innerHTML = `
                     <div class="user-avatar">${avatarHtml}</div>
                     <div class="user-info">
                         <div class="user-name">${escapeHtml(user.username)}</div>
                         <div class="user-status">
-                            <div class="status-dot"></div>
+                            ${statusIndicator}
                             В сети
                         </div>
                     </div>
@@ -3431,20 +3750,7 @@
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('inputArea').classList.remove('hidden');
 
-            const chatAvatar = document.getElementById('chatAvatar');
-
-            if (user.isShameBoard) {
-                chatAvatar.innerHTML = '🔥';
-                chatAvatar.style.background = '#ed4245';
-            } else {
-                const initial = user.username.charAt(0).toUpperCase();
-                if (user.avatar) {
-                    chatAvatar.innerHTML = `<img src="${user.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                } else {
-                    chatAvatar.textContent = initial;
-                }
-                chatAvatar.style.background = '';
-            }
+            updateChatHeaderAvatar();
 
             document.getElementById('chatName').textContent = user.username;
 
@@ -3459,6 +3765,32 @@
             }
 
             updateUsersList(Array.from(onlineUsers.values()));
+        }
+
+        function updateChatHeaderAvatar() {
+            if (!selectedUser) return;
+
+            const chatAvatar = document.getElementById('chatAvatar');
+
+            if (selectedUser.isShameBoard) {
+                if (selectedUser.avatar) {
+                    chatAvatar.innerHTML = `<img src="${selectedUser.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    chatAvatar.style.background = '';
+                } else {
+                    chatAvatar.innerHTML = '🔥';
+                    chatAvatar.style.background = '#ed4245';
+                }
+            } else {
+                const initial = selectedUser.username.charAt(0).toUpperCase();
+                if (selectedUser.avatar) {
+                    // Добавляем timestamp только для HTTP URL, не для base64
+                    const avatarSrc = selectedUser.avatar.startsWith('data:') ? selectedUser.avatar : `${selectedUser.avatar}?t=${Date.now()}`;
+                    chatAvatar.innerHTML = `<img src="${avatarSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                } else {
+                    chatAvatar.textContent = initial;
+                }
+                chatAvatar.style.background = '';
+            }
         }
 
         async function loadMessageHistory(withUser) {
@@ -3579,44 +3911,6 @@
             }
         }
 
-        function openFileSelector() {
-            if (!selectedUser) return;
-
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.multiple = true;
-            input.style.display = 'none';
-
-            input.onchange = (e) => {
-                const files = e.target.files;
-                if (files.length > 0) {
-                    Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            const fileData = {
-                                name: file.name,
-                                size: file.size,
-                                content: event.target.result
-                            };
-
-                            socket.emit('send-file', { to: selectedUser.id, file: fileData });
-
-                            if (!chats.has(selectedUser.id)) {
-                                chats.set(selectedUser.id, []);
-                            }
-                            chats.get(selectedUser.id).push({ type: 'file', file: fileData, own: true, time: new Date() });
-
-                            addFileMessage(file.name, file.size, event.target.result, true);
-                        };
-                        reader.readAsDataURL(file);
-                    });
-                }
-                document.body.removeChild(input);
-            };
-
-            document.body.appendChild(input);
-            input.click();
-        }
 
         function addMessage(text, isOwn, replyData = null) {
             const messagesDiv = document.getElementById('messages');
@@ -4357,6 +4651,45 @@
             } else {
                 toggleBtn.textContent = '👥';
             }
+        }
+
+        function openFileSelector() {
+            if (!selectedUser) return;
+
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true;
+            input.style.display = 'none';
+
+            input.onchange = (e) => {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    Array.from(files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const fileData = {
+                                name: file.name,
+                                size: file.size,
+                                content: event.target.result
+                            };
+
+                            socket.emit('send-file', { to: selectedUser.id, file: fileData });
+
+                            if (!chats.has(selectedUser.id)) {
+                                chats.set(selectedUser.id, []);
+                            }
+                            chats.get(selectedUser.id).push({ type: 'file', file: fileData, own: true, time: new Date() });
+
+                            addFileMessage(file.name, file.size, event.target.result, true);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+                document.body.removeChild(input);
+            };
+
+            document.body.appendChild(input);
+            input.click();
         }
     </script>
 </body>

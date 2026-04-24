@@ -563,6 +563,10 @@ app.post('/api/admin/clear-shame-board', async (req, res) => {
         }
 
         fs.writeFileSync(SHAME_BOARD_FILE, JSON.stringify([], null, 2));
+
+        // Уведомляем всех клиентов об очистке доски позора
+        io.emit('shame-board-cleared');
+
         res.json({ success: true, message: 'Доска позора очищена' });
     } catch (err) {
         console.error('Clear shame board error:', err);
@@ -604,6 +608,50 @@ app.get('/api/shame-board-name', (req, res) => {
     } catch (err) {
         console.error('Get shame board name error:', err);
         res.json({ success: true, name: 'Доска позора' });
+    }
+});
+
+app.get('/api/shame-board-info', (req, res) => {
+    try {
+        const configPath = path.join(__dirname, 'shame-board-config.json');
+        if (fs.existsSync(configPath)) {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            res.json({
+                success: true,
+                name: config.name || 'Доска позора',
+                avatar: config.avatar || null
+            });
+        } else {
+            res.json({ success: true, name: 'Доска позора', avatar: null });
+        }
+    } catch (err) {
+        console.error('Get shame board info error:', err);
+        res.json({ success: true, name: 'Доска позора', avatar: null });
+    }
+});
+
+app.post('/api/admin/shame-board-avatar', async (req, res) => {
+    try {
+        const { password, avatar } = req.body;
+
+        if (password !== ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Неверный пароль' });
+        }
+
+        const configPath = path.join(__dirname, 'shame-board-config.json');
+        let config = { name: 'Доска позора' };
+
+        if (fs.existsSync(configPath)) {
+            config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        }
+
+        config.avatar = avatar;
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+        res.json({ success: true, message: 'Аватарка доски позора обновлена' });
+    } catch (err) {
+        console.error('Update shame board avatar error:', err);
+        res.status(500).json({ error: 'Ошибка обновления аватарки' });
     }
 });
 

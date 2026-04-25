@@ -2078,6 +2078,16 @@
                 input.value = userSettings.inputPadding || 0;
             }
 
+            // Применяем темный текст для темы "Оригинал"
+            if (userSettings.theme === 'original') {
+                const settingsContent = document.querySelector('.settings-content');
+                if (settingsContent) {
+                    settingsContent.querySelectorAll('h2, h3, label, p, span').forEach(el => {
+                        el.style.color = '#2F1B0C';
+                    });
+                }
+            }
+
             // Обновляем активную тему
             document.querySelectorAll('.theme-btn').forEach(btn => {
                 if (btn.dataset.theme === userSettings.theme) {
@@ -2197,6 +2207,20 @@
                     const chatStatus = document.querySelector('.chat-header-info p');
                     if (chatName) chatName.style.color = '#FFF8DC';
                     if (chatStatus) chatStatus.style.color = '#FFE4B5';
+                }
+
+                // Темный текст в модальных окнах (светлый фон)
+                const settingsContent = document.querySelector('.settings-content');
+                if (settingsContent) {
+                    settingsContent.querySelectorAll('h2, h3, label, p, span').forEach(el => {
+                        el.style.color = '#2F1B0C';
+                    });
+                }
+                const adminContent = document.querySelector('.admin-content');
+                if (adminContent) {
+                    adminContent.querySelectorAll('h2, h3, label, p, span, .stat-label, .stat-value').forEach(el => {
+                        el.style.color = '#2F1B0C';
+                    });
                 }
             } else {
                 // Темная тема

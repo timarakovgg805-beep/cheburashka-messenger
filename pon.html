@@ -2164,11 +2164,11 @@
                 root.style.setProperty('--bg-secondary', '#D2691E'); // Шоколадный
                 root.style.setProperty('--bg-tertiary', '#8B4513'); // Коричневый
                 root.style.setProperty('--bg-modifier', '#CD853F'); // Перу
-                root.style.setProperty('--text-normal', '#2F1B0C'); // Темно-коричневый
-                root.style.setProperty('--text-muted', '#654321'); // Темнее для контраста
-                root.style.setProperty('--interactive-normal', '#2F1B0C');
-                root.style.setProperty('--interactive-hover', '#000000');
-                root.style.setProperty('--interactive-active', '#000000');
+                root.style.setProperty('--text-normal', '#FFFFFF'); // Белый для читаемости
+                root.style.setProperty('--text-muted', '#FFF8DC'); // Кремовый для вторичного текста
+                root.style.setProperty('--interactive-normal', '#FFFFFF');
+                root.style.setProperty('--interactive-hover', '#FFF8DC');
+                root.style.setProperty('--interactive-active', '#FFE4B5');
                 root.style.setProperty('--brand', '#FF8C00'); // Оранжевый (мандарин)
                 root.style.setProperty('--brand-hover', '#FF7F00');
                 root.style.setProperty('--border', '#8B4513');
@@ -2186,7 +2186,7 @@
                 // Обновляем цвет текста в сайдбаре и шапке чата для контраста
                 sidebarElements.forEach(el => {
                     if (el.classList.contains('user-name') || el.classList.contains('current-user')) {
-                        el.style.color = '#FFF8DC';
+                        el.style.color = '#FFFFFF';
                     }
                 });
 

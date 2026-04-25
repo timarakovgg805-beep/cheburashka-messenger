@@ -3,3 +3,6 @@ node_modules/
 .env
 .gradle/
 .claude/
+messages.json
+users.json
+login-logs.json

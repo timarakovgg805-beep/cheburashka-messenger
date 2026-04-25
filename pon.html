@@ -1711,6 +1711,9 @@
                 <button class="users-tab" onclick="switchTab('recent')" data-tab="recent">Недавние</button>
                 <button class="users-tab" onclick="switchTab('shame')" data-tab="shame" id="shameBoardTab">Доска позора</button>
             </div>
+            <div id="clearRecentBtn" style="display: none; padding: 10px; text-align: center;">
+                <button onclick="clearRecentUsers()" style="background: var(--bg-modifier); color: var(--text-normal); border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">🗑️ Очистить недавние</button>
+            </div>
             <div class="users-list" id="usersList"></div>
         </div>
 
@@ -2992,6 +2995,13 @@
             }
         }
 
+        function clearRecentUsers() {
+            if (confirm('Очистить список недавних пользователей?')) {
+                localStorage.removeItem('recentUsers');
+                showRecentUsers();
+            }
+        }
+
         // Показать сайдбар (для мобильных)
         function showSidebar() {
             document.querySelector('.sidebar').classList.remove('hidden-mobile');
@@ -3024,11 +3034,15 @@
             });
 
             // Показываем соответствующий список
+            const clearRecentBtn = document.getElementById('clearRecentBtn');
             if (tab === 'online') {
+                clearRecentBtn.style.display = 'none';
                 updateUsersList(allOnlineUsers);
             } else if (tab === 'recent') {
+                clearRecentBtn.style.display = 'block';
                 showRecentUsers();
             } else if (tab === 'shame') {
+                clearRecentBtn.style.display = 'none';
                 showShameBoard();
             }
         }

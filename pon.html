@@ -1852,6 +1852,26 @@
                     </div>
                     <button class="avatar-upload-btn" onclick="adminLogin()" style="width: 100%;">Войти</button>
                 </div>
+                <div id="moderatorPanel" style="display: none;">
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Модераторская панель</p>
+
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Топ активных пользователей</h4>
+                    <button class="avatar-upload-btn" onclick="showTopUsers()" style="width: 100%; margin-bottom: 10px;">Показать статистику</button>
+                    <div id="topUsersListMod" style="display: none; max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
+
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Доска позора</h4>
+                    <input type="text" id="shameBoardNameInputMod" placeholder="Название доски позора" style="width: 100%; padding: 10px; background: var(--bg-modifier); border: 1px solid var(--bg-tertiary); border-radius: 4px; color: var(--text-normal); margin-bottom: 10px;">
+                    <button class="avatar-upload-btn" onclick="renameShameboard()" style="width: 100%; margin-bottom: 10px;">Переименовать доску позора</button>
+
+                    <div style="margin-bottom: 10px;">
+                        <div class="avatar-preview" id="shameBoardAvatarPreviewMod" style="width: 80px; height: 80px; margin: 0 auto 10px;"></div>
+                        <input type="file" id="shameBoardAvatarInputMod" accept="image/*" style="display: none;" onchange="uploadShameBoardAvatar()">
+                        <button class="avatar-upload-btn" onclick="document.getElementById('shameBoardAvatarInputMod').click()" style="width: 100%; margin-bottom: 5px;">Загрузить аватарку</button>
+                        <button class="avatar-upload-btn" onclick="removeShameBoardAvatar()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal);">Удалить аватарку</button>
+                    </div>
+
+                    <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal); margin-top: 15px;">Выйти</button>
+                </div>
                 <div id="adminPanel" style="display: none;">
                     <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Список зарегистрированных пользователей:</p>
                     <div id="adminUsersList" style="max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
@@ -1920,16 +1940,15 @@
                     <button class="avatar-upload-btn" onclick="applyOriginalThemeColors()" style="width: 100%; margin-top: 10px;">Применить цвета</button>
                     <button class="avatar-upload-btn" onclick="resetOriginalThemeColors()" style="width: 100%; margin-top: 5px; background: var(--bg-modifier); color: var(--text-normal);">Сбросить на стандартные</button>
 
-                    <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal); margin-top: 15px;">Выйти</button>
-                </div>
-            </div>
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Changelog</h4>
+                    <button class="avatar-upload-btn" onclick="showChangelog()" style="width: 100%; margin-bottom: 10px;">Показать изменения</button>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 12px; color: var(--text-muted);">Текст последнего сообщения:</label>
+                        <textarea id="changelogText" style="width: 100%; min-height: 100px; padding: 10px; background: var(--bg-secondary); color: var(--text-normal); border: 1px solid var(--bg-modifier); border-radius: 8px; font-family: inherit; resize: vertical; margin-top: 5px;"></textarea>
+                        <button class="avatar-upload-btn" onclick="saveChangelog()" style="width: 100%; margin-top: 10px;">Сохранить текст</button>
+                    </div>
 
-            <div class="settings-section">
-                <h3>Changelog</h3>
-                <button class="avatar-upload-btn" onclick="showChangelog()" style="width: 100%;">Показать изменения</button>
-                <div id="adminChangelogEditor" style="display: none; margin-top: 10px;">
-                    <textarea id="changelogText" style="width: 100%; min-height: 150px; padding: 10px; background: var(--bg-secondary); color: var(--text-normal); border: 1px solid var(--bg-modifier); border-radius: 8px; font-family: inherit; resize: vertical;"></textarea>
-                    <button class="avatar-upload-btn" onclick="saveChangelog()" style="width: 100%; margin-top: 10px;">Сохранить</button>
+                    <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal); margin-top: 15px;">Выйти</button>
                 </div>
             </div>
 
@@ -2454,6 +2473,7 @@
 
         let changelogClickCount = 0;
         let changelogText = '';
+        let currentAdminPassword = '';
 
         function showChangelog() {
             changelogClickCount++;
@@ -2462,11 +2482,6 @@
                     alert(changelogText);
                 } else {
                     alert('Changelog пуст. Отредактируйте его в админ-панели.');
-                }
-                const editor = document.getElementById('adminChangelogEditor');
-                if (editor) {
-                    editor.style.display = 'block';
-                    document.getElementById('changelogText').value = changelogText;
                 }
             } else if (changelogClickCount > 15 && changelogClickCount < 20) {
                 alert('......');
@@ -2485,6 +2500,7 @@
 
         function saveChangelog() {
             changelogText = document.getElementById('changelogText').value;
+            localStorage.setItem('changelogText', changelogText);
             alert('Changelog сохранен!');
         }
 
@@ -2509,6 +2525,37 @@
                 return;
             }
 
+            // Проверяем модераторский пароль
+            if (password === 'moderator123') {
+                currentAdminPassword = password;
+                document.getElementById('adminLogin').style.display = 'none';
+                document.getElementById('moderatorPanel').style.display = 'block';
+
+                // Загружаем название доски позора с сервера
+                try {
+                    const response = await fetch('/api/shame-board-info');
+                    const data = await response.json();
+
+                    document.getElementById('shameBoardNameInputMod').value = data.name || 'Доска позора';
+
+                    // Загружаем аватарку доски позора
+                    const previewMod = document.getElementById('shameBoardAvatarPreviewMod');
+                    if (data.avatar) {
+                        previewMod.innerHTML = `<img src="${data.avatar}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                        previewMod.style.fontSize = '';
+                    } else {
+                        previewMod.innerHTML = '📋';
+                        previewMod.style.fontSize = '40px';
+                        previewMod.style.display = 'flex';
+                        previewMod.style.alignItems = 'center';
+                        previewMod.style.justifyContent = 'center';
+                    }
+                } catch (err) {
+                    console.error('Load shame board info error:', err);
+                }
+                return;
+            }
+
             try {
                 const response = await fetch('/api/admin/users', {
                     method: 'POST',
@@ -2519,6 +2566,7 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    currentAdminPassword = password;
                     document.getElementById('adminLogin').style.display = 'none';
                     document.getElementById('adminPanel').style.display = 'block';
 
@@ -2548,6 +2596,13 @@
 
                     // Загружаем сохраненные цвета темы "Оригинал"
                     loadOriginalThemeColors();
+
+                    // Загружаем сохраненный текст changelog
+                    const savedChangelog = localStorage.getItem('changelogText');
+                    if (savedChangelog) {
+                        changelogText = savedChangelog;
+                        document.getElementById('changelogText').value = savedChangelog;
+                    }
                 } else {
                     alert('Неверный пароль');
                 }
@@ -2558,8 +2613,10 @@
         }
 
         function adminLogout() {
+            currentAdminPassword = '';
             document.getElementById('adminLogin').style.display = 'block';
             document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('moderatorPanel').style.display = 'none';
             document.getElementById('adminPasswordInput').value = '';
             document.getElementById('adminUsersList').innerHTML = '';
         }
@@ -2677,13 +2734,17 @@
         }
 
         async function renameShameboard() {
-            const newName = document.getElementById('shameBoardNameInput').value.trim();
+            // Проверяем, какая панель открыта
+            const isModerator = document.getElementById('moderatorPanel').style.display === 'block';
+            const inputId = isModerator ? 'shameBoardNameInputMod' : 'shameBoardNameInput';
+            const newName = document.getElementById(inputId).value.trim();
+
             if (!newName) {
                 alert('Введите новое название');
                 return;
             }
 
-            const password = document.getElementById('adminPasswordInput').value;
+            const password = currentAdminPassword;
 
             try {
                 const response = await fetch('/api/admin/rename-shame-board', {
@@ -2711,7 +2772,10 @@
                 const response = await fetch('/api/shame-board-name');
                 const data = await response.json();
                 if (data.success) {
-                    document.getElementById('shameBoardNameInput').value = data.name || 'Доска позора';
+                    const adminInput = document.getElementById('shameBoardNameInput');
+                    const modInput = document.getElementById('shameBoardNameInputMod');
+                    if (adminInput) adminInput.value = data.name || 'Доска позора';
+                    if (modInput) modInput.value = data.name || 'Доска позора';
                 }
             } catch (err) {
                 console.error('Load shame board name error:', err);
@@ -2719,10 +2783,12 @@
         }
 
         async function uploadShameBoardAvatar() {
-            const file = document.getElementById('shameBoardAvatarInput').files[0];
+            const isModerator = document.getElementById('moderatorPanel').style.display === 'block';
+            const inputId = isModerator ? 'shameBoardAvatarInputMod' : 'shameBoardAvatarInput';
+            const file = document.getElementById(inputId).files[0];
             if (!file) return;
 
-            const password = document.getElementById('adminPasswordInput').value;
+            const password = currentAdminPassword;
             if (!password) {
                 alert('Введите пароль администратора');
                 return;
@@ -2758,7 +2824,7 @@
         }
 
         async function removeShameBoardAvatar() {
-            const password = document.getElementById('adminPasswordInput').value;
+            const password = currentAdminPassword;
             if (!password) {
                 alert('Введите пароль администратора');
                 return;
@@ -2791,16 +2857,34 @@
                 const response = await fetch('/api/shame-board-info');
                 const data = await response.json();
 
+                // Обновляем превью в админ-панели
                 const preview = document.getElementById('shameBoardAvatarPreview');
-                if (data.avatar) {
-                    preview.innerHTML = `<img src="${data.avatar}" alt="Avatar">`;
-                    preview.style.fontSize = '';
-                } else {
-                    preview.innerHTML = '🔥';
-                    preview.style.fontSize = '40px';
-                    preview.style.display = 'flex';
-                    preview.style.alignItems = 'center';
-                    preview.style.justifyContent = 'center';
+                if (preview) {
+                    if (data.avatar) {
+                        preview.innerHTML = `<img src="${data.avatar}" alt="Avatar">`;
+                        preview.style.fontSize = '';
+                    } else {
+                        preview.innerHTML = '🔥';
+                        preview.style.fontSize = '40px';
+                        preview.style.display = 'flex';
+                        preview.style.alignItems = 'center';
+                        preview.style.justifyContent = 'center';
+                    }
+                }
+
+                // Обновляем превью в модераторской панели
+                const previewMod = document.getElementById('shameBoardAvatarPreviewMod');
+                if (previewMod) {
+                    if (data.avatar) {
+                        previewMod.innerHTML = `<img src="${data.avatar}" alt="Avatar">`;
+                        previewMod.style.fontSize = '';
+                    } else {
+                        previewMod.innerHTML = '🔥';
+                        previewMod.style.fontSize = '40px';
+                        previewMod.style.display = 'flex';
+                        previewMod.style.alignItems = 'center';
+                        previewMod.style.justifyContent = 'center';
+                    }
                 }
             } catch (err) {
                 console.error('Update shame board avatar preview error:', err);
@@ -2884,8 +2968,10 @@
         }
 
         async function showTopUsers() {
-            const password = document.getElementById('adminPasswordInput').value;
-            const container = document.getElementById('topUsersList');
+            const isModerator = document.getElementById('moderatorPanel').style.display === 'block';
+            const password = currentAdminPassword;
+            const containerId = isModerator ? 'topUsersListMod' : 'topUsersList';
+            const container = document.getElementById(containerId);
 
             try {
                 const response = await fetch('/api/admin/top-users', {

@@ -16,6 +16,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const JWT_SECRET = 'pon-secret-key-change-in-production';
 const ADMIN_PASSWORD = 'qwerty321';
+const MODERATOR_PASSWORD = 'moderator123';
 const USERS_FILE = path.join(__dirname, 'users.json');
 const MESSAGES_FILE = path.join(__dirname, 'messages.json');
 const SHAME_BOARD_FILE = path.join(__dirname, 'shame-board.json');
@@ -586,7 +587,7 @@ app.post('/api/admin/rename-shame-board', async (req, res) => {
     try {
         const { password, newName } = req.body;
 
-        if (password !== ADMIN_PASSWORD) {
+        if (password !== ADMIN_PASSWORD && password !== MODERATOR_PASSWORD) {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
@@ -642,7 +643,7 @@ app.post('/api/admin/shame-board-avatar', async (req, res) => {
     try {
         const { password, avatar } = req.body;
 
-        if (password !== ADMIN_PASSWORD) {
+        if (password !== ADMIN_PASSWORD && password !== MODERATOR_PASSWORD) {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
@@ -698,7 +699,7 @@ app.post('/api/admin/top-users', async (req, res) => {
     try {
         const { password } = req.body;
 
-        if (password !== ADMIN_PASSWORD) {
+        if (password !== ADMIN_PASSWORD && password !== MODERATOR_PASSWORD) {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 

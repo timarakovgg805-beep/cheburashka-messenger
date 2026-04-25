@@ -1674,6 +1674,16 @@
                 opacity: 0;
             }
         }
+
+        /* Черный текст в настройках для темы Оригинал */
+        body[data-theme="original"] .settings-content h2,
+        body[data-theme="original"] .settings-content h3,
+        body[data-theme="original"] .settings-content label,
+        body[data-theme="original"] .settings-content p,
+        body[data-theme="original"] .settings-content span,
+        body[data-theme="original"] .settings-content div {
+            color: #000000 !important;
+        }
     </style>
 </head>
 <body>
@@ -1884,6 +1894,32 @@
                     <button class="avatar-upload-btn" onclick="showBlockedIPs()" style="width: 100%; margin-bottom: 10px;">Показать заблокированные IP</button>
                     <div id="blockedIPsList" style="display: none; max-height: 200px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
 
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Настройка темы "Оригинал"</h4>
+                    <div style="display: grid; gap: 10px;">
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted);">Основной текст:</label>
+                            <input type="color" id="originalTextNormal" value="#FFFFFF" style="width: 100%; height: 40px; cursor: pointer; border: 1px solid var(--bg-tertiary); border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted);">Вторичный текст:</label>
+                            <input type="color" id="originalTextMuted" value="#FFF8DC" style="width: 100%; height: 40px; cursor: pointer; border: 1px solid var(--bg-tertiary); border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted);">Основной фон:</label>
+                            <input type="color" id="originalBgPrimary" value="#FFF8DC" style="width: 100%; height: 40px; cursor: pointer; border: 1px solid var(--bg-tertiary); border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted);">Вторичный фон:</label>
+                            <input type="color" id="originalBgSecondary" value="#D2691E" style="width: 100%; height: 40px; cursor: pointer; border: 1px solid var(--bg-tertiary); border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted);">Акцентный цвет:</label>
+                            <input type="color" id="originalBrand" value="#FF8C00" style="width: 100%; height: 40px; cursor: pointer; border: 1px solid var(--bg-tertiary); border-radius: 4px;">
+                        </div>
+                    </div>
+                    <button class="avatar-upload-btn" onclick="applyOriginalThemeColors()" style="width: 100%; margin-top: 10px;">Применить цвета</button>
+                    <button class="avatar-upload-btn" onclick="resetOriginalThemeColors()" style="width: 100%; margin-top: 5px; background: var(--bg-modifier); color: var(--text-normal);">Сбросить на стандартные</button>
+
                     <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal); margin-top: 15px;">Выйти</button>
                 </div>
             </div>
@@ -1891,6 +1927,10 @@
             <div class="settings-section">
                 <h3>Changelog</h3>
                 <button class="avatar-upload-btn" onclick="showChangelog()" style="width: 100%;">Показать изменения</button>
+                <div id="adminChangelogEditor" style="display: none; margin-top: 10px;">
+                    <textarea id="changelogText" style="width: 100%; min-height: 150px; padding: 10px; background: var(--bg-secondary); color: var(--text-normal); border: 1px solid var(--bg-modifier); border-radius: 8px; font-family: inherit; resize: vertical;"></textarea>
+                    <button class="avatar-upload-btn" onclick="saveChangelog()" style="width: 100%; margin-top: 10px;">Сохранить</button>
+                </div>
             </div>
 
         </div>
@@ -2097,6 +2137,18 @@
                 }
             });
 
+            // Применяем черный текст для темы "Оригинал"
+            if (userSettings.theme === 'original') {
+                setTimeout(() => {
+                    const settingsContent = document.querySelector('.settings-content');
+                    if (settingsContent) {
+                        settingsContent.querySelectorAll('h2, h3, label, p, span, div').forEach(el => {
+                            el.style.setProperty('color', '#000000', 'important');
+                        });
+                    }
+                }, 100);
+            }
+
             document.querySelectorAll('.gradient-option').forEach(opt => {
                 opt.classList.remove('active');
                 if (opt.dataset.gradient === userSettings.gradient) {
@@ -2119,6 +2171,7 @@
         function selectTheme(theme) {
             userSettings.theme = theme;
             saveUserSettings();
+            document.body.setAttribute('data-theme', theme);
             applyTheme(theme);
 
             // Обновляем кнопки
@@ -2170,17 +2223,26 @@
                 }
             } else if (theme === 'original') {
                 // Тема "Оригинал" - цвета Чебурашки
-                root.style.setProperty('--bg-primary', '#FFF8DC'); // Кремовый
-                root.style.setProperty('--bg-secondary', '#D2691E'); // Шоколадный
-                root.style.setProperty('--bg-tertiary', '#8B4513'); // Коричневый
-                root.style.setProperty('--bg-modifier', '#CD853F'); // Перу
-                root.style.setProperty('--text-normal', '#FFFFFF'); // Белый для читаемости
-                root.style.setProperty('--text-muted', '#FFF8DC'); // Кремовый для вторичного текста
-                root.style.setProperty('--interactive-normal', '#FFFFFF');
-                root.style.setProperty('--interactive-hover', '#FFF8DC');
+                // Загружаем сохраненные цвета или используем стандартные
+                const customColors = loadOriginalThemeColors();
+
+                const textNormal = customColors?.textNormal || '#FFFFFF';
+                const textMuted = customColors?.textMuted || '#FFF8DC';
+                const bgPrimary = customColors?.bgPrimary || '#FFF8DC';
+                const bgSecondary = customColors?.bgSecondary || '#D2691E';
+                const brand = customColors?.brand || '#FF8C00';
+
+                root.style.setProperty('--bg-primary', bgPrimary);
+                root.style.setProperty('--bg-secondary', bgSecondary);
+                root.style.setProperty('--bg-tertiary', '#8B4513');
+                root.style.setProperty('--bg-modifier', '#CD853F');
+                root.style.setProperty('--text-normal', textNormal);
+                root.style.setProperty('--text-muted', textMuted);
+                root.style.setProperty('--interactive-normal', textNormal);
+                root.style.setProperty('--interactive-hover', textMuted);
                 root.style.setProperty('--interactive-active', '#FFE4B5');
-                root.style.setProperty('--brand', '#FF8C00'); // Оранжевый (мандарин)
-                root.style.setProperty('--brand-hover', '#FF7F00');
+                root.style.setProperty('--brand', brand);
+                root.style.setProperty('--brand-hover', brand);
                 root.style.setProperty('--border', '#8B4513');
 
                 // Применяем градиент Чебурашки
@@ -2209,17 +2271,17 @@
                     if (chatStatus) chatStatus.style.color = '#FFE4B5';
                 }
 
-                // Темный текст в модальных окнах (светлый фон)
+                // Черный текст в модальных окнах (светлый фон)
                 const settingsContent = document.querySelector('.settings-content');
                 if (settingsContent) {
-                    settingsContent.querySelectorAll('h2, h3, label, p, span').forEach(el => {
-                        el.style.color = '#2F1B0C';
+                    settingsContent.querySelectorAll('h2, h3, label, p, span, div').forEach(el => {
+                        el.style.setProperty('color', '#000000', 'important');
                     });
                 }
                 const adminContent = document.querySelector('.admin-content');
                 if (adminContent) {
-                    adminContent.querySelectorAll('h2, h3, label, p, span, .stat-label, .stat-value').forEach(el => {
-                        el.style.color = '#2F1B0C';
+                    adminContent.querySelectorAll('h2, h3, label, p, span, div, .stat-label, .stat-value').forEach(el => {
+                        el.style.setProperty('color', '#000000', 'important');
                     });
                 }
             } else {
@@ -2390,8 +2452,40 @@
             }
         }
 
+        let changelogClickCount = 0;
+        let changelogText = '';
+
         function showChangelog() {
-            alert('Много хочешь мне, что заняться нечем');
+            changelogClickCount++;
+            if (changelogClickCount === 20) {
+                if (changelogText) {
+                    alert(changelogText);
+                } else {
+                    alert('Changelog пуст. Отредактируйте его в админ-панели.');
+                }
+                const editor = document.getElementById('adminChangelogEditor');
+                if (editor) {
+                    editor.style.display = 'block';
+                    document.getElementById('changelogText').value = changelogText;
+                }
+            } else if (changelogClickCount > 15 && changelogClickCount < 20) {
+                alert('......');
+            } else if (changelogClickCount === 15) {
+                alert('наебал  ещё 5 раз кликни');
+            } else if (changelogClickCount > 10 && changelogClickCount < 15) {
+                alert('......');
+            } else if (changelogClickCount === 10) {
+                alert('ладно но кликни ещё 5 раз');
+            } else if (changelogClickCount > 1 && changelogClickCount < 10) {
+                alert('......');
+            } else if (changelogClickCount === 1) {
+                alert('Много хочешь, мне что заняться нечем.');
+            }
+        }
+
+        function saveChangelog() {
+            changelogText = document.getElementById('changelogText').value;
+            alert('Changelog сохранен!');
         }
 
         function enableAI() {
@@ -2451,6 +2545,9 @@
 
                     // Загружаем статус регистрации
                     loadRegistrationStatus();
+
+                    // Загружаем сохраненные цвета темы "Оригинал"
+                    loadOriginalThemeColors();
                 } else {
                     alert('Неверный пароль');
                 }
@@ -2465,6 +2562,58 @@
             document.getElementById('adminPanel').style.display = 'none';
             document.getElementById('adminPasswordInput').value = '';
             document.getElementById('adminUsersList').innerHTML = '';
+        }
+
+        function applyOriginalThemeColors() {
+            const colors = {
+                textNormal: document.getElementById('originalTextNormal').value,
+                textMuted: document.getElementById('originalTextMuted').value,
+                bgPrimary: document.getElementById('originalBgPrimary').value,
+                bgSecondary: document.getElementById('originalBgSecondary').value,
+                brand: document.getElementById('originalBrand').value
+            };
+
+            // Сохраняем в localStorage
+            localStorage.setItem('originalThemeColors', JSON.stringify(colors));
+
+            // Применяем если текущая тема - оригинал
+            if (userSettings.theme === 'original') {
+                applyTheme('original');
+            }
+
+            alert('Цвета темы "Оригинал" применены!');
+        }
+
+        function resetOriginalThemeColors() {
+            localStorage.removeItem('originalThemeColors');
+
+            // Сбрасываем значения в инпутах
+            document.getElementById('originalTextNormal').value = '#FFFFFF';
+            document.getElementById('originalTextMuted').value = '#FFF8DC';
+            document.getElementById('originalBgPrimary').value = '#FFF8DC';
+            document.getElementById('originalBgSecondary').value = '#D2691E';
+            document.getElementById('originalBrand').value = '#FF8C00';
+
+            // Применяем если текущая тема - оригинал
+            if (userSettings.theme === 'original') {
+                applyTheme('original');
+            }
+
+            alert('Цвета темы "Оригинал" сброшены на стандартные!');
+        }
+
+        function loadOriginalThemeColors() {
+            const saved = localStorage.getItem('originalThemeColors');
+            if (saved) {
+                const colors = JSON.parse(saved);
+                document.getElementById('originalTextNormal').value = colors.textNormal;
+                document.getElementById('originalTextMuted').value = colors.textMuted;
+                document.getElementById('originalBgPrimary').value = colors.bgPrimary;
+                document.getElementById('originalBgSecondary').value = colors.bgSecondary;
+                document.getElementById('originalBrand').value = colors.brand;
+                return colors;
+            }
+            return null;
         }
 
         async function deleteUser(username) {
@@ -3500,6 +3649,7 @@
             // Загружаем название доски позора для вкладки
             updateShameBoardDisplay();
 
+            document.body.setAttribute('data-theme', userSettings.theme || 'dark');
             applyTheme(userSettings.theme || 'dark');
             if (userSettings.theme === 'light') {
                 applyGradient(userSettings.gradient);
@@ -3596,6 +3746,26 @@
 
                 if (selectedUser && selectedUser.id === from) {
                     addMessage(message, false);
+                }
+            });
+
+            socket.on('receive-reaction', ({ from, messageId, emoji }) => {
+                // Получаем реакцию от другого пользователя
+                const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (!messageDiv) return;
+
+                const reactionsDiv = messageDiv.querySelector('.message-reactions');
+                let reactionEl = Array.from(reactionsDiv.children).find(el => el.textContent.includes(emoji));
+
+                if (reactionEl) {
+                    const countEl = reactionEl.querySelector('.reaction-count');
+                    const count = parseInt(countEl.textContent) + 1;
+                    countEl.textContent = count;
+                } else {
+                    const newReaction = document.createElement('div');
+                    newReaction.className = 'reaction';
+                    newReaction.innerHTML = `${emoji} <span class="reaction-count">1</span>`;
+                    reactionsDiv.appendChild(newReaction);
                 }
             });
 
@@ -3850,7 +4020,7 @@
                     data.messages.forEach(msg => {
                         const isOwn = msg.from === currentUser;
                         if (msg.type === 'message') {
-                            addMessage(msg.content, isOwn);
+                            addMessage(msg.content, isOwn, null, msg.timestamp);
                         } else if (msg.type === 'file') {
                             addFileMessage(msg.content.name, msg.content.size, msg.content.content, isOwn);
                         }
@@ -3877,7 +4047,7 @@
 
                     data.messages.forEach(msg => {
                         const isOwn = msg.from === currentUser;
-                        addShameBoardMessage(msg.content, msg.from, isOwn);
+                        addShameBoardMessage(msg.content, msg.from, isOwn, msg.timestamp);
                     });
                 }
             } catch (err) {
@@ -3958,14 +4128,16 @@
         }
 
 
-        function addMessage(text, isOwn, replyData = null) {
+        function addMessage(text, isOwn, replyData = null, timestamp = null) {
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isOwn ? 'own' : ''}`;
             const messageId = Date.now() + Math.random();
             messageDiv.dataset.messageId = messageId;
 
-            const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            const time = timestamp
+                ? new Date(timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                : new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
             const username = isOwn ? currentUser : (selectedUser ? selectedUser.username : 'User');
             const avatarContent = isOwn
@@ -3999,14 +4171,16 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        async function addShameBoardMessage(text, fromUser, isOwn) {
+        async function addShameBoardMessage(text, fromUser, isOwn, timestamp = null) {
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isOwn ? 'own' : ''}`;
             const messageId = Date.now() + Math.random();
             messageDiv.dataset.messageId = messageId;
 
-            const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            const time = timestamp
+                ? new Date(timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                : new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
             // Получаем аватар пользователя
             let avatarHtml = fromUser.charAt(0).toUpperCase();
@@ -4121,6 +4295,15 @@
                 newReaction.className = 'reaction';
                 newReaction.innerHTML = `${emoji} <span class="reaction-count">1</span>`;
                 reactionsDiv.appendChild(newReaction);
+            }
+
+            // Отправляем реакцию другому пользователю через Socket.IO
+            if (selectedUser && !selectedUser.isShameBoard) {
+                socket.emit('add-reaction', {
+                    to: selectedUser.id,
+                    messageId,
+                    emoji
+                });
             }
         }
 

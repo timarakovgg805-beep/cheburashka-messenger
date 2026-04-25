@@ -284,6 +284,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'pon.html'));
 });
 
+app.get('/favicon.ico', (req, res) => {
+    res.status(204).end();
+});
+
 app.post('/api/register', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -1053,6 +1057,15 @@ io.on('connection', (socket) => {
             onlineUsers.set(socket.id, onlineUser);
             io.emit('users-update', Array.from(onlineUsers.values()));
         }
+    });
+
+    socket.on('add-reaction', ({ to, messageId, emoji }) => {
+        // Отправляем реакцию получателю
+        io.to(to).emit('receive-reaction', {
+            from: socket.id,
+            messageId,
+            emoji
+        });
     });
 });
 

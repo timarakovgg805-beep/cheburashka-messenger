@@ -3953,7 +3953,7 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        function addShameBoardMessage(text, fromUser, isOwn) {
+        async function addShameBoardMessage(text, fromUser, isOwn) {
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isOwn ? 'own' : ''}`;
@@ -3962,8 +3962,20 @@
 
             const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
+            // Получаем аватар пользователя
+            let avatarHtml = fromUser.charAt(0).toUpperCase();
+            try {
+                const response = await fetch(`/api/avatar/${fromUser}`);
+                const data = await response.json();
+                if (data.success && data.avatar) {
+                    avatarHtml = `<img src="${data.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                }
+            } catch (err) {
+                console.error('Get avatar error:', err);
+            }
+
             messageDiv.innerHTML = `
-                <div class="message-avatar">${fromUser.charAt(0).toUpperCase()}</div>
+                <div class="message-avatar">${avatarHtml}</div>
                 <div class="message-content">
                     <div class="message-header">
                         <span class="message-author">${escapeHtml(fromUser)}</span>

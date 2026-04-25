@@ -694,6 +694,31 @@ app.get('/api/users/list', async (req, res) => {
     }
 });
 
+// Search users
+app.post('/api/search-users', async (req, res) => {
+    try {
+        const { query } = req.body;
+
+        if (!query || query.trim().length === 0) {
+            return res.json({ success: true, users: [] });
+        }
+
+        const users = await loadUsers();
+        const searchQuery = query.toLowerCase().trim();
+
+        // Ищем пользователей по имени (регистронезависимый поиск)
+        const foundUsers = users
+            .filter(u => u.username.toLowerCase().includes(searchQuery))
+            .map(u => ({ username: u.username }))
+            .slice(0, 20); // Ограничиваем результаты 20 пользователями
+
+        res.json({ success: true, users: foundUsers });
+    } catch (err) {
+        console.error('Search users error:', err);
+        res.status(500).json({ error: 'Ошибка поиска пользователей' });
+    }
+});
+
 // Get top active users
 app.post('/api/admin/top-users', async (req, res) => {
     try {

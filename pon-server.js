@@ -562,7 +562,11 @@ app.post('/api/admin/clear-shame-board', async (req, res) => {
             return res.status(401).json({ error: 'Неверный пароль' });
         }
 
-        fs.writeFileSync(SHAME_BOARD_FILE, JSON.stringify([], null, 2));
+        if (shameBoardCollection) {
+            await shameBoardCollection.deleteMany({});
+        } else {
+            fs.writeFileSync(SHAME_BOARD_FILE, JSON.stringify([], null, 2));
+        }
 
         // Уведомляем всех клиентов об очистке доски позора
         io.emit('shame-board-cleared');

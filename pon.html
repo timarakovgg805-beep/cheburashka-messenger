@@ -3033,7 +3033,7 @@
             }
         }
 
-        function showRecentUsers() {
+        async function showRecentUsers() {
             const usersList = document.getElementById('usersList');
             const recentUsers = JSON.parse(localStorage.getItem('recentUsers') || '[]');
 
@@ -3044,7 +3044,7 @@
                 return;
             }
 
-            recentUsers.forEach(user => {
+            for (const user of recentUsers) {
                 const userItem = document.createElement('div');
                 userItem.className = 'user-item';
                 userItem.dataset.userId = user.id;
@@ -3054,11 +3054,17 @@
                 }
 
                 const initial = user.username.charAt(0).toUpperCase();
-                let avatarHtml = '';
-                if (user.avatar) {
-                    avatarHtml = `<img src="${user.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                } else {
-                    avatarHtml = initial;
+                let avatarHtml = initial;
+
+                // Загружаем аватар с сервера
+                try {
+                    const response = await fetch(`/api/avatar/${user.username}`);
+                    const data = await response.json();
+                    if (data.success && data.avatar) {
+                        avatarHtml = `<img src="${data.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    }
+                } catch (err) {
+                    console.error('Get avatar error:', err);
                 }
 
                 // Проверяем онлайн ли пользователь
@@ -3080,7 +3086,7 @@
                     selectUser(onlineUser || user);
                 };
                 usersList.appendChild(userItem);
-            });
+            }
         }
 
         async function showShameBoard() {

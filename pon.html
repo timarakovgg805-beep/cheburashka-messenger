@@ -3735,9 +3735,8 @@
         function selectUser(user) {
             selectedUser = user;
 
-            // Не сохраняем доску позора в недавние
+            // Сохраняем только последний открытый чат, но не в недавние
             if (!user.isShameBoard) {
-                saveRecentUser(user);
                 localStorage.setItem('lastOpenedChat', JSON.stringify(user));
             }
 
@@ -3868,6 +3867,9 @@
                     chats.get(selectedUser.id).push({ type: 'message', text, own: true, time: new Date() });
 
                     addMessage(text, true, replyingTo);
+
+                    // Сохраняем в недавние только при отправке сообщения
+                    saveRecentUser(selectedUser);
                 }
 
                 input.value = '';

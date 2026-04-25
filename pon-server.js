@@ -22,6 +22,7 @@ const MESSAGES_FILE = path.join(__dirname, 'messages.json');
 const SHAME_BOARD_FILE = path.join(__dirname, 'shame-board.json');
 const ADMIN_SETTINGS_FILE = path.join(__dirname, 'admin-settings.json');
 const LOGIN_LOGS_FILE = path.join(__dirname, 'login-logs.json');
+const NOTIFICATIONS_FILE = path.join(__dirname, 'notifications.json');
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/cheburashka';
@@ -209,6 +210,40 @@ async function getLoginLogs() {
     } catch (err) {
         return [];
     }
+}
+
+// Функции для работы с уведомлениями
+function loadNotifications() {
+    try {
+        const data = fs.readFileSync(NOTIFICATIONS_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (err) {
+        return {};
+    }
+}
+
+function saveNotifications(notifications) {
+    fs.writeFileSync(NOTIFICATIONS_FILE, JSON.stringify(notifications, null, 2));
+}
+
+function addNotification(username, notification) {
+    const notifications = loadNotifications();
+    if (!notifications[username]) {
+        notifications[username] = [];
+    }
+    notifications[username].push(notification);
+    saveNotifications(notifications);
+}
+
+function getNotifications(username) {
+    const notifications = loadNotifications();
+    return notifications[username] || [];
+}
+
+function clearNotifications(username) {
+    const notifications = loadNotifications();
+    notifications[username] = [];
+    saveNotifications(notifications);
 }
 
 async function saveLoginLog(log) {
@@ -968,6 +1003,13 @@ io.on('connection', (socket) => {
 
             console.log(`${decoded.username} authenticated from ${clientIP}, total users: ${onlineUsers.size}`);
             io.emit('users-update', Array.from(onlineUsers.values()));
+
+            // Отправляем уведомления пользователю
+            const notifications = getNotifications(decoded.username);
+            if (notifications.length > 0) {
+                socket.emit('notifications', notifications);
+                clearNotifications(decoded.username);
+            }
         } catch (err) {
             socket.emit('auth-error', 'Неверный токен');
         }
@@ -981,21 +1023,34 @@ io.on('connection', (socket) => {
         const fromUsername = onlineUsers.get(socket.id)?.username;
         const toUser = Array.from(onlineUsers.values()).find(u => u.id === to);
 
-        if (fromUsername && toUser) {
+        if (fromUsername) {
+            // Определяем имя получателя
+            let toUsername = toUser ? toUser.username : to;
+
             await saveMessage({
                 from: fromUsername,
-                to: toUser.username,
+                to: toUsername,
                 type: 'message',
                 content: message,
                 timestamp: new Date().toISOString()
             });
-        }
 
-        io.to(to).emit('receive-message', {
-            from: socket.id,
-            fromName: onlineUsers.get(socket.id)?.username,
-            message
-        });
+            // Если пользователь онлайн, отправляем сообщение
+            if (toUser) {
+                io.to(to).emit('receive-message', {
+                    from: socket.id,
+                    fromName: fromUsername,
+                    message
+                });
+            } else {
+                // Если пользователь оффлайн, создаем уведомление
+                addNotification(toUsername, {
+                    from: fromUsername,
+                    message: message,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
     });
 
     socket.on('send-shame-message', async ({ message }) => {

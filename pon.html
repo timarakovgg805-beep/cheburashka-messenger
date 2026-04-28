@@ -238,6 +238,23 @@
             margin-left: auto;
         }
 
+        #searchInput {
+            color: var(--text-normal) !important;
+        }
+
+        #searchInput::placeholder {
+            color: var(--text-muted) !important;
+            opacity: 1;
+        }
+
+        #searchInput::-webkit-input-placeholder {
+            color: var(--text-muted) !important;
+        }
+
+        #searchInput::-moz-placeholder {
+            color: var(--text-muted) !important;
+        }
+
         .status-dot {
             width: 8px;
             height: 8px;
@@ -532,6 +549,212 @@
 
         .input-area button:hover {
             color: var(--interactive-hover);
+        }
+
+        .voice-btn {
+            position: relative;
+        }
+
+        .voice-btn.recording {
+            color: #ed4245 !important;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .voice-recording-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .voice-recording-box {
+            background: var(--bg-primary);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.24);
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .voice-recording-box h3 {
+            color: var(--text-normal);
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .voice-timer {
+            font-size: 32px;
+            color: var(--brand);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .voice-visualizer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 60px;
+            margin-bottom: 20px;
+        }
+
+        .voice-bar {
+            width: 4px;
+            background: var(--brand);
+            border-radius: 2px;
+            animation: voiceWave 0.8s ease-in-out infinite;
+        }
+
+        .voice-bar:nth-child(2) { animation-delay: 0.1s; }
+        .voice-bar:nth-child(3) { animation-delay: 0.2s; }
+        .voice-bar:nth-child(4) { animation-delay: 0.3s; }
+        .voice-bar:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes voiceWave {
+            0%, 100% { height: 20px; }
+            50% { height: 50px; }
+        }
+
+        .voice-recording-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .voice-recording-actions button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .voice-cancel-btn {
+            background: var(--bg-modifier);
+            color: var(--text-normal);
+        }
+
+        .voice-cancel-btn:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .voice-send-btn {
+            background: var(--brand);
+            color: white;
+        }
+
+        .voice-send-btn:hover {
+            background: var(--brand-hover);
+        }
+
+        .voice-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--bg-modifier);
+            border-radius: 4px;
+            margin-top: 5px;
+            max-width: 300px;
+        }
+
+        .voice-play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--brand);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .voice-play-btn:hover {
+            background: var(--brand-hover);
+        }
+
+        .voice-transcribe-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-normal);
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .voice-transcribe-btn:hover {
+            background: var(--bg-modifier);
+        }
+
+        .voice-transcribe-btn.transcribing {
+            color: var(--brand);
+            animation: pulse 1.5s infinite;
+        }
+
+        .voice-transcript {
+            margin-top: 8px;
+            padding: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-style: italic;
+            border-left: 3px solid var(--brand);
+        }
+
+        .voice-transcript-text {
+            color: var(--text-normal);
+        }
+
+        .voice-waveform {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .voice-progress {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .voice-progress-bar {
+            height: 100%;
+            background: var(--brand);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .voice-duration {
+            font-size: 12px;
+            color: var(--text-muted);
         }
 
         .empty-state {
@@ -1766,7 +1989,26 @@
                     <input type="text" id="messageInput" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
                 </div>
                 <button onclick="openFileSelector()">📎</button>
+                <button class="voice-btn" onclick="startVoiceRecording()">🎤</button>
                 <button onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="voice-recording-modal hidden" id="voiceRecordingModal">
+        <div class="voice-recording-box">
+            <h3>Запись голосового сообщения</h3>
+            <div class="voice-timer" id="voiceTimer">0:00</div>
+            <div class="voice-visualizer">
+                <div class="voice-bar"></div>
+                <div class="voice-bar"></div>
+                <div class="voice-bar"></div>
+                <div class="voice-bar"></div>
+                <div class="voice-bar"></div>
+            </div>
+            <div class="voice-recording-actions">
+                <button class="voice-cancel-btn" onclick="cancelVoiceRecording()">Отмена</button>
+                <button class="voice-send-btn" onclick="sendVoiceMessage()">Отправить</button>
             </div>
         </div>
     </div>
@@ -1842,6 +2084,12 @@
                     </div>
 
                     <div style="margin-bottom: 15px;">
+                        <h4 style="font-size: 14px; margin-bottom: 8px;">Отправить пожелание админу</h4>
+                        <textarea id="feedbackInput" placeholder="Напишите ваше пожелание или предложение..." style="width: 100%; padding: 12px; border: 2px solid var(--bg-modifier); border-radius: 8px; background: var(--bg-modifier); color: var(--text-normal); font-size: 14px; min-height: 80px; resize: vertical;"></textarea>
+                        <button class="avatar-upload-btn" onclick="sendFeedback()" style="width: 100%; margin-top: 10px;">Отправить</button>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
                         <h4 style="font-size: 14px; margin-bottom: 8px;">Никнейм</h4>
                         <input type="text" id="nicknameInput" placeholder="Введите никнейм" style="width: 100%; padding: 12px; border: 2px solid var(--bg-modifier); border-radius: 8px; background: var(--bg-modifier); color: var(--text-normal); font-size: 14px;">
                         <button class="avatar-upload-btn" onclick="changeNickname()" style="width: 100%; margin-top: 10px;">Сохранить никнейм</button>
@@ -1881,6 +2129,10 @@
                         <button class="avatar-upload-btn" onclick="document.getElementById('shameBoardAvatarInputMod').click()" style="width: 100%; margin-bottom: 5px;">Загрузить аватарку</button>
                         <button class="avatar-upload-btn" onclick="removeShameBoardAvatar()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal);">Удалить аватарку</button>
                     </div>
+
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Пожелания пользователей</h4>
+                    <button class="avatar-upload-btn" onclick="showFeedback()" style="width: 100%; margin-bottom: 10px;">Показать пожелания</button>
+                    <div id="feedbackListMod" style="display: none; max-height: 300px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
 
                     <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal); margin-top: 15px;">Выйти</button>
                 </div>
@@ -1958,6 +2210,10 @@
                         <textarea id="changelogText" style="width: 100%; min-height: 100px; padding: 10px; background: var(--bg-secondary); color: var(--text-normal); border: 1px solid var(--bg-modifier); border-radius: 8px; font-family: inherit; resize: vertical; margin-top: 5px;"></textarea>
                         <button class="avatar-upload-btn" onclick="saveChangelog()" style="width: 100%; margin-top: 10px;">Сохранить текст</button>
                     </div>
+
+                    <h4 style="margin-top: 15px; margin-bottom: 10px;">Пожелания пользователей</h4>
+                    <button class="avatar-upload-btn" onclick="showFeedback()" style="width: 100%; margin-bottom: 10px;">Показать пожелания</button>
+                    <div id="feedbackList" style="display: none; max-height: 300px; overflow-y: auto; background: var(--bg-modifier); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
 
                     <button class="avatar-upload-btn" onclick="adminLogout()" style="width: 100%; background: var(--bg-modifier); color: var(--text-normal); margin-top: 15px;">Выйти</button>
                 </div>
@@ -2415,6 +2671,34 @@
             }
         }
 
+        async function sendFeedback() {
+            const message = document.getElementById('feedbackInput').value.trim();
+            if (!message) {
+                alert('Введите текст пожелания');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, message })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Пожелание отправлено!');
+                    document.getElementById('feedbackInput').value = '';
+                } else {
+                    alert(data.error || 'Ошибка отправки');
+                }
+            } catch (err) {
+                console.error('Send feedback error:', err);
+                alert('Ошибка отправки');
+            }
+        }
+
         function changeFontSize(size) {
             const sizes = {
                 small: '13px',
@@ -2495,8 +2779,9 @@
         function showChangelog() {
             changelogClickCount++;
             if (changelogClickCount === 20) {
-                if (changelogText) {
-                    alert(changelogText);
+                const savedChangelog = localStorage.getItem('changelogText');
+                if (savedChangelog) {
+                    alert(savedChangelog);
                 } else {
                     alert('Changelog пуст. Отредактируйте его в админ-панели.');
                 }
@@ -2636,6 +2921,57 @@
             document.getElementById('moderatorPanel').style.display = 'none';
             document.getElementById('adminPasswordInput').value = '';
             document.getElementById('adminUsersList').innerHTML = '';
+        }
+
+        async function showFeedback() {
+            const password = currentAdminPassword;
+            if (!password) {
+                alert('Введите пароль администратора');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const feedbackList = document.getElementById('feedbackList');
+                    const feedbackListMod = document.getElementById('feedbackListMod');
+
+                    if (data.feedback.length === 0) {
+                        const emptyMsg = '<div style="color: var(--text-muted);">Пожеланий пока нет</div>';
+                        if (feedbackList) feedbackList.innerHTML = emptyMsg;
+                        if (feedbackListMod) feedbackListMod.innerHTML = emptyMsg;
+                    } else {
+                        let html = '';
+                        data.feedback.forEach(item => {
+                            const date = new Date(item.timestamp).toLocaleString('ru-RU');
+                            html += `
+                                <div style="margin-bottom: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 4px;">
+                                    <div style="font-weight: 600; margin-bottom: 5px;">${item.username}</div>
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px;">${date}</div>
+                                    <div>${item.message}</div>
+                                </div>
+                            `;
+                        });
+                        if (feedbackList) feedbackList.innerHTML = html;
+                        if (feedbackListMod) feedbackListMod.innerHTML = html;
+                    }
+
+                    if (feedbackList) feedbackList.style.display = 'block';
+                    if (feedbackListMod) feedbackListMod.style.display = 'block';
+                } else {
+                    alert(data.error || 'Ошибка загрузки');
+                }
+            } catch (err) {
+                console.error('Show feedback error:', err);
+                alert('Ошибка загрузки');
+            }
         }
 
         function applyOriginalThemeColors() {
@@ -4068,6 +4404,29 @@
                 }
             });
 
+            socket.on('receive-voice', ({ from, fromName, voice }) => {
+                console.log('Received voice from:', from, fromName);
+
+                if (!chats.has(from)) {
+                    chats.set(from, []);
+                }
+                chats.get(from).push({ type: 'voice', voice, own: false, time: new Date() });
+
+                if (selectedUser && selectedUser.id === from) {
+                    addVoiceMessage(voice, false);
+                } else {
+                    // Увеличиваем счетчик непрочитанных
+                    const userInList = Array.from(onlineUsers.values()).find(u => u.id === from);
+                    if (userInList) {
+                        if (!unreadMessages.has(from)) {
+                            unreadMessages.set(from, 0);
+                        }
+                        unreadMessages.set(from, unreadMessages.get(from) + 1);
+                        updateUsersList();
+                    }
+                }
+            });
+
             // WebRTC сигналинг
             socket.on('call-offer', async ({ from, fromName, offer, callType }) => {
                 incomingCallData = { from, fromName, offer, callType };
@@ -4306,6 +4665,8 @@
                             addMessage(msg.content, isOwn, null, msg.timestamp);
                         } else if (msg.type === 'file') {
                             addFileMessage(msg.content.name, msg.content.size, msg.content.content, isOwn);
+                        } else if (msg.type === 'voice') {
+                            addVoiceMessage(msg.content, isOwn);
                         }
                     });
                 }
@@ -5214,6 +5575,230 @@
 
             document.body.appendChild(input);
             input.click();
+        }
+
+        // Голосовые сообщения
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordingStartTime;
+        let recordingTimer;
+
+        async function startVoiceRecording() {
+            if (!selectedUser || selectedUser.isShameBoard) return;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.start();
+                recordingStartTime = Date.now();
+
+                document.getElementById('voiceRecordingModal').classList.remove('hidden');
+                document.querySelector('.voice-btn').classList.add('recording');
+
+                recordingTimer = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    document.getElementById('voiceTimer').textContent =
+                        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }, 1000);
+
+            } catch (err) {
+                console.error('Failed to start recording:', err);
+                alert('Не удалось получить доступ к микрофону');
+            }
+        }
+
+        function cancelVoiceRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+            clearInterval(recordingTimer);
+            audioChunks = [];
+            document.getElementById('voiceRecordingModal').classList.add('hidden');
+            document.querySelector('.voice-btn').classList.remove('recording');
+        }
+
+        function sendVoiceMessage() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+
+                    reader.onload = (event) => {
+                        const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+                        const voiceData = {
+                            content: event.target.result,
+                            duration: duration
+                        };
+
+                        socket.emit('send-voice', { to: selectedUser.id, voice: voiceData });
+
+                        if (!chats.has(selectedUser.id)) {
+                            chats.set(selectedUser.id, []);
+                        }
+                        chats.get(selectedUser.id).push({ type: 'voice', voice: voiceData, own: true, time: new Date() });
+
+                        addVoiceMessage(voiceData, true);
+
+                        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                        clearInterval(recordingTimer);
+                        audioChunks = [];
+                        document.getElementById('voiceRecordingModal').classList.add('hidden');
+                        document.querySelector('.voice-btn').classList.remove('recording');
+                    };
+
+                    reader.readAsDataURL(audioBlob);
+                };
+            }
+        }
+
+        function addVoiceMessage(voiceData, own) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${own ? 'own' : ''}`;
+
+            const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            const duration = voiceData.duration || 0;
+            const minutes = Math.floor(duration / 60);
+            const seconds = duration % 60;
+            const durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            const voiceId = `voice-${Date.now()}-${Math.random()}`;
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${own ? currentUser.charAt(0).toUpperCase() : (selectedUser.username ? selectedUser.username.charAt(0).toUpperCase() : '?')}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${own ? currentUser : (selectedUser.username || 'Unknown')}</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="voice-message">
+                        <button class="voice-play-btn" onclick="toggleVoicePlayback('${voiceId}')">▶</button>
+                        <div class="voice-waveform">
+                            <div class="voice-progress">
+                                <div class="voice-progress-bar" id="${voiceId}-progress"></div>
+                            </div>
+                            <div class="voice-duration">${durationText}</div>
+                        </div>
+                        <button class="voice-transcribe-btn" onclick="transcribeVoice('${voiceId}')" title="Расшифровать">📝</button>
+                    </div>
+                    <div class="voice-transcript hidden" id="${voiceId}-transcript">
+                        <span class="voice-transcript-text"></span>
+                    </div>
+                    <audio id="${voiceId}" src="${voiceData.content}" style="display: none;"></audio>
+                </div>
+            `;
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function toggleVoicePlayback(voiceId) {
+            const audio = document.getElementById(voiceId);
+            const btn = audio.parentElement.querySelector('.voice-play-btn');
+            const progressBar = document.getElementById(`${voiceId}-progress`);
+
+            if (audio.paused) {
+                audio.play();
+                btn.textContent = '⏸';
+
+                audio.ontimeupdate = () => {
+                    const progress = (audio.currentTime / audio.duration) * 100;
+                    progressBar.style.width = `${progress}%`;
+                };
+
+                audio.onended = () => {
+                    btn.textContent = '▶';
+                    progressBar.style.width = '0%';
+                };
+            } else {
+                audio.pause();
+                btn.textContent = '▶';
+            }
+        }
+
+        async function transcribeVoice(voiceId) {
+            const audio = document.getElementById(voiceId);
+            const transcriptDiv = document.getElementById(`${voiceId}-transcript`);
+            const transcriptText = transcriptDiv.querySelector('.voice-transcript-text');
+            const btn = audio.parentElement.querySelector('.voice-transcribe-btn');
+
+            if (!transcriptDiv.classList.contains('hidden')) {
+                transcriptDiv.classList.add('hidden');
+                return;
+            }
+
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                transcriptText.textContent = 'Расшифровка не поддерживается в этом браузере';
+                transcriptDiv.classList.remove('hidden');
+                return;
+            }
+
+            btn.classList.add('transcribing');
+            transcriptText.textContent = 'Расшифровка...';
+            transcriptDiv.classList.remove('hidden');
+
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+
+                recognition.lang = 'ru-RU';
+                recognition.continuous = true;
+                recognition.interimResults = false;
+
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaElementSource(audio);
+                const destination = audioContext.createMediaStreamDestination();
+                source.connect(destination);
+                source.connect(audioContext.destination);
+
+                let transcript = '';
+
+                recognition.onresult = (event) => {
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) {
+                            transcript += event.results[i][0].transcript + ' ';
+                        }
+                    }
+                    transcriptText.textContent = transcript.trim() || 'Расшифровка...';
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    transcriptText.textContent = 'Не удалось расшифровать. Попробуйте воспроизвести аудио.';
+                    btn.classList.remove('transcribing');
+                };
+
+                recognition.onend = () => {
+                    btn.classList.remove('transcribing');
+                    if (!transcript.trim()) {
+                        transcriptText.textContent = 'Текст не распознан. Попробуйте воспроизвести аудио и говорить четче.';
+                    }
+                };
+
+                audio.currentTime = 0;
+                recognition.start();
+                audio.play();
+
+                audio.onended = () => {
+                    recognition.stop();
+                };
+
+            } catch (err) {
+                console.error('Transcription error:', err);
+                transcriptText.textContent = 'Ошибка расшифровки. Попробуйте еще раз.';
+                btn.classList.remove('transcribing');
+            }
         }
     </script>
 </body>

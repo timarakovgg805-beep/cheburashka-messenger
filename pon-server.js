@@ -23,6 +23,7 @@ const SHAME_BOARD_FILE = path.join(__dirname, 'shame-board.json');
 const ADMIN_SETTINGS_FILE = path.join(__dirname, 'admin-settings.json');
 const LOGIN_LOGS_FILE = path.join(__dirname, 'login-logs.json');
 const NOTIFICATIONS_FILE = path.join(__dirname, 'notifications.json');
+const FEEDBACK_FILE = path.join(__dirname, 'feedback.json');
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/cheburashka';
@@ -233,6 +234,19 @@ function addNotification(username, notification) {
     }
     notifications[username].push(notification);
     saveNotifications(notifications);
+}
+
+function loadFeedback() {
+    try {
+        const data = fs.readFileSync(FEEDBACK_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (err) {
+        return [];
+    }
+}
+
+function saveFeedback(feedback) {
+    fs.writeFileSync(FEEDBACK_FILE, JSON.stringify(feedback, null, 2));
 }
 
 function getNotifications(username) {
@@ -1091,6 +1105,37 @@ io.on('connection', (socket) => {
         });
     });
 
+    socket.on('send-voice', async ({ to, voice }) => {
+        const fromUsername = onlineUsers.get(socket.id)?.username;
+        const toUser = Array.from(onlineUsers.values()).find(u => u.id === to);
+
+        if (fromUsername) {
+            let toUsername = toUser ? toUser.username : to;
+
+            await saveMessage({
+                from: fromUsername,
+                to: toUsername,
+                type: 'voice',
+                content: voice,
+                timestamp: new Date().toISOString()
+            });
+
+            if (toUser) {
+                io.to(to).emit('receive-voice', {
+                    from: socket.id,
+                    fromName: fromUsername,
+                    voice
+                });
+            } else {
+                addNotification(toUsername, {
+                    from: fromUsername,
+                    message: '🎤 Голосовое сообщение',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+    });
+
     socket.on('disconnect', () => {
         const user = onlineUsers.get(socket.id);
         onlineUsers.delete(socket.id);
@@ -1153,4 +1198,45 @@ io.on('connection', (socket) => {
 const PORT = 3000;
 server.listen(PORT, () => {
     console.log(`Pon server running on http://localhost:${PORT}`);
+});
+
+// Feedback endpoint
+app.post('/api/feedback', (req, res) => {
+    try {
+        const { username, message } = req.body;
+
+        if (!username || !message) {
+            return res.json({ success: false, error: 'Заполните все поля' });
+        }
+
+        const feedback = loadFeedback();
+        feedback.push({
+            username,
+            message,
+            timestamp: new Date().toISOString()
+        });
+        saveFeedback(feedback);
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Feedback error:', err);
+        res.json({ success: false, error: 'Ошибка отправки' });
+    }
+});
+
+// Get feedback (admin/moderator only)
+app.post('/api/admin/feedback', (req, res) => {
+    try {
+        const { password } = req.body;
+
+        if (password !== ADMIN_PASSWORD && password !== MODERATOR_PASSWORD) {
+            return res.json({ success: false, error: 'Неверный пароль' });
+        }
+
+        const feedback = loadFeedback();
+        res.json({ success: true, feedback });
+    } catch (err) {
+        console.error('Get feedback error:', err);
+        res.json({ success: false, error: 'Ошибка загрузки' });
+    }
 });

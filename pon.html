@@ -4443,7 +4443,7 @@
             }
         }
 
-        function togglePasswordXz() {
+function togglePasswordXz() {
             const passwordInput = document.getElementById('passwordInput');
 
             if (passwordInput.type === 'password') {
@@ -4452,12 +4452,10 @@
                 passwordInput.type = 'password';
             }
         }
-        window.togglePasswordXz = togglePasswordXz;
 
         function downloadCheburasshka() {
             alert('Вы вступили в партию');
         }
-        window.downloadCheburasshka = downloadCheburasshka;
 
         function toggleAuthMode() {
             isRegisterMode = !isRegisterMode;
@@ -4476,7 +4474,6 @@
             }
             hideError();
         }
-        window.toggleAuthMode = toggleAuthMode;
 
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
@@ -4489,18 +4486,17 @@
         }
 
         async function login() {
-            const username = document.getElementById('usernameInput').value.trim();
-            const password = document.getElementById('passwordInput').value;
-
-            if (!username || !password) {
-                showError('Заполните все поля');
-                return;
-            }
-
-            const endpoint = isRegisterMode ? '/api/register' : '/api/login';
-
             try {
-                const response = await fetch(endpoint, {
+                const username = document.getElementById('usernameInput').value.trim();
+                const password = document.getElementById('passwordInput').value;
+
+                if (!username || !password) {
+                    showError('Заполните все поля');
+                    return;
+                }
+
+                hideError();
+                const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
@@ -4509,19 +4505,27 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    sessionStorage.setItem('pon_token', data.token);
+                    currentUser = username;
                     authToken = data.token;
-                    currentUser = data.username;
+                    localStorage.setItem('pon_token', authToken);
+                    localStorage.setItem('pon_user', username);
                     initializeApp();
                 } else {
-                    showError(data.error || 'Ошибка авторизации');
+                    showError(data.error || 'Ошибка входа');
                 }
             } catch (err) {
                 showError('Ошибка подключения к серверу');
                 console.error(err);
             }
         }
-        window.login = login;
+
+// Экспортируем функции в window сразу
+        window.togglePasswordXz = togglePasswordXz;
+        window.downloadCheburasshka = downloadCheburasshka;
+        window.toggleAuthMode = toggleAuthMode;
+        window.showError = showError;
+        window.hideError = hideError;
+window.login = login;
 
         async function autoLogin() {
             try {

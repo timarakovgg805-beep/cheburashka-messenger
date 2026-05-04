@@ -5320,7 +5320,6 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
                 </div>
                 <div class="message-actions">
                     <button class="message-action-btn" onclick="replyToMessage('${messageId}', '${escapeHtml(text)}')" title="Ответить">↩️</button>
-                    <button class="message-action-btn" onclick="translateMessage('${messageId}')" title="Перевести">🌐</button>
                     <button class="message-action-btn" onclick="copyMessage('${escapeHtml(text)}')" title="Копировать">📋</button>
                     ${isOwn ? `<button class="message-action-btn" onclick="editMessage('${messageId}')" title="Редактировать">✏️</button>` : ''}
                     ${isOwn ? `<button class="message-action-btn" onclick="deleteMessage('${messageId}')" title="Удалить">🗑️</button>` : ''}
@@ -5558,34 +5557,6 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
             replyingTo = null;
             const replyPreview = document.querySelector('.reply-preview');
             if (replyPreview) replyPreview.remove();
-        }
-
-        // Перевод сообщения
-        async function translateMessage(messageId) {
-            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
-            if (!messageDiv) return;
-
-            const textEl = messageDiv.querySelector('.message-text');
-            const originalText = textEl.textContent;
-
-            // Простой перевод через Google Translate API (нужен ключ) или используем заглушку
-            try {
-                // TODO: Интеграция с API переводчика
-                const translated = `[Перевод] ${originalText}`;
-                textEl.innerHTML = `
-                    <div>${escapeHtml(translated)}</div>
-                    <button onclick="showOriginal('${messageId}', '${escapeHtml(originalText)}')" style="font-size: 11px; color: var(--brand); background: none; border: none; cursor: pointer; margin-top: 4px;">Показать оригинал</button>
-                `;
-            } catch (err) {
-                alert('Ошибка перевода');
-            }
-        }
-
-        function showOriginal(messageId, originalText) {
-            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
-            if (!messageDiv) return;
-            const textEl = messageDiv.querySelector('.message-text');
-            textEl.textContent = originalText;
         }
 
         // Копирование сообщения

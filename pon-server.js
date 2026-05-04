@@ -460,37 +460,6 @@ app.post('/api/messages', async (req, res) => {
 
 app.post('/api/messages/delete', async (req, res) => {
     try {
-        const { token, withUser } = req.body;
-
-        if (!token) {
-            return res.status(400).json({ error: 'Токен не предоставлен' });
-        }
-
-        const decoded = jwt.verify(token, JWT_SECRET);
-        const username = decoded.username;
-
-        const allMessages = await loadMessages();
-        const filtered = allMessages.filter(msg =>
-            !((msg.from === username && msg.to === withUser) ||
-            (msg.from === withUser && msg.to === username))
-        );
-
-        if (messagesCollection) {
-            await messagesCollection.deleteMany({ $or: [
-                { from: username, to: withUser },
-                { from: withUser, to: username }
-            ]});
-        }
-        fs.writeFileSync(MESSAGES_FILE, JSON.stringify(filtered, null, 2));
-
-        res.json({ success: true });
-    } catch (err) {
-        res.status(401).json({ error: 'Ошибка удаления' });
-    }
-});
-
-app.post('/api/reactions', async (req, res) => {
-    try {
         const { token, messageKey, emoji } = req.body;
 
         if (!token || !messageKey || !emoji) {
@@ -1237,12 +1206,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('add-reaction', ({ messageKey, emoji }) => {
+    socket.on('toggle-reaction', ({ messageKey, emoji, add }) => {
         // Отправляем реакцию всем остальным пользователям
         socket.broadcast.emit('receive-reaction', {
-            from: socket.id,
             messageKey,
-            emoji
+            emoji,
+            add
         });
     });
 });

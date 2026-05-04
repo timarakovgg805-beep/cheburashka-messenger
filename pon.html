@@ -387,36 +387,94 @@
             background: var(--bg-modifier);
         }
 
-        .message-reactions {
+.message-reactions {
             display: flex;
+            flex-wrap: wrap;
             gap: 4px;
             margin-top: 4px;
-            flex-wrap: wrap;
         }
 
-        .reaction {
+        .message-reaction {
+            display: flex;
+            align-items: center;
+            gap: 4px;
             background: var(--bg-modifier);
             border-radius: 12px;
             padding: 2px 8px;
             font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
             cursor: pointer;
             transition: all 0.2s;
+            border: 1px solid transparent;
         }
 
-        .reaction.own-reaction {
+        .message-reaction:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--primary-color);
+        }
+
+        .message-reaction.active {
             background: var(--primary-color);
             opacity: 0.8;
         }
 
-        .reaction:hover {
-            background: var(--bg-tertiary);
-            transform: scale(1.1);
+        .reaction-count {
+            font-size: 12px;
+            font-weight: 600;
         }
 
-        .reaction-count {
+        .message-add-reaction {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-modifier);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .message:hover .message-add-reaction {
+            display: flex;
+        }
+
+        .message-add-reaction:hover {
+            background: var(--primary-color);
+        }
+
+        .reaction-picker {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            gap: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 100;
+            display: none;
+        }
+
+        .reaction-picker.show {
+            display: flex;
+        }
+
+        .reaction-picker button {
+            font-size: 20px;
+            padding: 4px 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .reaction-picker button:hover {
+            background: var(--bg-tertiary);
+            transform: scale(1.2);
+        }
             font-size: 12px;
             color: var(--text-muted);
         }
@@ -5258,9 +5316,9 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
                     ${replyPreview}
                     <div class="message-text">${escapeHtml(text)}</div>
                     <div class="message-reactions"></div>
+                    <div class="message-add-reaction" onclick="showReactionPicker(this.parentElement)">➕</div>
                 </div>
                 <div class="message-actions">
-                    <button class="message-action-btn" onclick="addReaction('${messageId}', '👍')" title="Реакция">👍</button>
                     <button class="message-action-btn" onclick="replyToMessage('${messageId}', '${escapeHtml(text)}')" title="Ответить">↩️</button>
                     <button class="message-action-btn" onclick="translateMessage('${messageId}')" title="Перевести">🌐</button>
                     <button class="message-action-btn" onclick="copyMessage('${escapeHtml(text)}')" title="Копировать">📋</button>
@@ -5382,67 +5440,96 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
             a.click();
         }
 
-// Реакции на сообщения
-        function addReaction(messageKey, emoji) {
-            console.log('Adding reaction:', { messageKey, emoji });
-            
-            const allMessages = document.querySelectorAll('[data-message-id]');
-            let messageDiv = null;
-            
-            for (const msg of allMessages) {
-                if (msg.dataset.messageId === messageKey) {
-                    messageDiv = msg;
-                    break;
-                }
-            }
-            
-            if (!messageDiv) {
-                console.log('Message not found in addReaction, messageKey:', messageKey);
-                return;
-            }
+// Реакции на сообщения (Discord-style)
+        const REACTION_EMOJIS = ['👍', '👎', '😂', '😢', '😡', '❤️', '🔥', '🎉'];
 
-            const reactionsDiv = messageDiv.querySelector('.message-reactions');
+        function showReactionPicker(messageDiv) {
+            // Удаляем старый пикер
+            document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
             
-            // Проверяем свою реакцию
-            const existingEl = Array.from(reactionsDiv.children).find(el => 
-                el.textContent.includes(emoji) && el.classList.contains('own-reaction')
-            );
+            const picker = document.createElement('div');
+            picker.className = 'reaction-picker show';
             
-            if (existingEl) {
-                return;
-            }
-
-            let reactionEl = Array.from(reactionsDiv.children).find(el => el.textContent.includes(emoji));
-            
-            if (reactionEl) {
-                const countEl = reactionEl.querySelector('.reaction-count');
-                const count = parseInt(countEl.textContent) + 1;
-                countEl.textContent = count;
-                reactionEl.classList.add('own-reaction');
-            } else {
-                const newReaction = document.createElement('div');
-                newReaction.className = 'reaction own-reaction';
-                newReaction.innerHTML = `${emoji} <span class="reaction-count">1</span>`;
-                reactionsDiv.appendChild(newReaction);
-            }
-
-            // Сохраняем на сервере
-            fetch('/api/reactions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    token: authToken,
-                    messageKey,
-                    emoji
-                })
+            REACTION_EMOJIS.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.textContent = emoji;
+                btn.onclick = () => {
+                    toggleReaction(messageDiv.dataset.messageId, emoji);
+                    picker.remove();
+                };
+                picker.appendChild(btn);
             });
 
-            // Отправляем реакцию всем остальным пользователям
-            socket.emit('add-reaction', {
+            messageDiv.appendChild(picker);
+        }
+
+        function toggleReaction(messageKey, emoji) {
+            const messageDiv = document.querySelector(`[data-message-id="${messageKey}"]`);
+            if (!messageDiv) return;
+
+            const reactionsDiv = messageDiv.querySelector('.message-reactions');
+            let reactionEl = Array.from(reactionsDiv.querySelectorAll('.message-reaction')).find(
+                el => el.textContent.includes(emoji)
+            );
+
+            if (reactionEl && reactionEl.classList.contains('active')) {
+                // Убираем реакцию
+                reactionEl.remove();
+            } else {
+                // Добавляем/обновляем реакцию
+                if (reactionEl) {
+                    reactionEl.classList.add('active');
+                    const countEl = reactionEl.querySelector('.reaction-count');
+                    countEl.textContent = parseInt(countEl.textContent) + 1;
+                } else {
+                    reactionEl = document.createElement('div');
+                    reactionEl.className = 'message-reaction active';
+                    reactionEl.innerHTML = `${emoji} <span class="reaction-count">1</span>`;
+                    reactionsDiv.appendChild(reactionEl);
+                }
+            }
+
+            // Отправляем на сервер
+            socket.emit('toggle-reaction', {
                 messageKey,
                 emoji
             });
         }
+
+        // Обработка входящих реакций
+        socket.on('receive-reaction', ({ messageKey, emoji, add }) => {
+            const messageDiv = document.querySelector(`[data-message-id="${messageKey}"]`);
+            if (!messageDiv) return;
+
+            const reactionsDiv = messageDiv.querySelector('.message-reactions');
+            let reactionEl = Array.from(reactionsDiv.querySelectorAll('.message-reaction')).find(
+                el => el.textContent.includes(emoji)
+            );
+
+            if (add) {
+                if (reactionEl) {
+                    reactionEl.classList.add('active');
+                    const countEl = reactionEl.querySelector('.reaction-count');
+                    countEl.textContent = parseInt(countEl.textContent) + 1;
+                } else {
+                    reactionEl = document.createElement('div');
+                    reactionEl.className = 'message-reaction active';
+                    reactionEl.innerHTML = `${emoji} <span class="reaction-count">1</span>`;
+                    reactionsDiv.appendChild(reactionEl);
+                }
+            } else {
+                if (reactionEl) {
+                    const countEl = reactionEl.querySelector('.reaction-count');
+                    const count = parseInt(countEl.textContent) - 1;
+                    if (count <= 0) {
+                        reactionEl.remove();
+                    } else {
+                        countEl.textContent = count;
+                        reactionEl.classList.remove('active');
+                    }
+                }
+            }
+        });
 
         // Ответ на сообщение
         let replyingTo = null;

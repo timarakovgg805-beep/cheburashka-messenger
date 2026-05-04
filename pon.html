@@ -5566,15 +5566,6 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
             });
         }
 
-        // Копирование сообщения
-                textEl.textContent = currentText;
-            };
-
-            textEl.innerHTML = '';
-            textEl.appendChild(input);
-            input.focus();
-        }
-
         // Удаление сообщения
         function deleteMessage(messageId) {
             if (confirm('Удалить сообщение?')) {

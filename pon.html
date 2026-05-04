@@ -5490,46 +5490,50 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
             }
 
             // Отправляем на сервер
-            socket.emit('toggle-reaction', {
-                messageKey,
-                emoji
-            });
+            if (socket) {
+                socket.emit('toggle-reaction', {
+                    messageKey,
+                    emoji
+                });
+            }
         }
 
         // Обработка входящих реакций
-        socket.on('receive-reaction', ({ messageKey, emoji, add }) => {
-            const messageDiv = document.querySelector(`[data-message-id="${messageKey}"]`);
-            if (!messageDiv) return;
+        if (socket) {
+            socket.on('receive-reaction', ({ messageKey, emoji, add }) => {
+                const messageDiv = document.querySelector(`[data-message-id="${messageKey}"]`);
+                if (!messageDiv) return;
 
-            const reactionsDiv = messageDiv.querySelector('.message-reactions');
-            let reactionEl = Array.from(reactionsDiv.querySelectorAll('.message-reaction')).find(
-                el => el.textContent.includes(emoji)
-            );
+                const reactionsDiv = messageDiv.querySelector('.message-reactions');
+                let reactionEl = Array.from(reactionsDiv.querySelectorAll('.message-reaction')).find(
+                    el => el.textContent.includes(emoji)
+                );
 
-            if (add) {
-                if (reactionEl) {
-                    reactionEl.classList.add('active');
-                    const countEl = reactionEl.querySelector('.reaction-count');
-                    countEl.textContent = parseInt(countEl.textContent) + 1;
-                } else {
-                    reactionEl = document.createElement('div');
-                    reactionEl.className = 'message-reaction active';
-                    reactionEl.innerHTML = `${emoji} <span class="reaction-count">1</span>`;
-                    reactionsDiv.appendChild(reactionEl);
-                }
-            } else {
-                if (reactionEl) {
-                    const countEl = reactionEl.querySelector('.reaction-count');
-                    const count = parseInt(countEl.textContent) - 1;
-                    if (count <= 0) {
-                        reactionEl.remove();
+                if (add) {
+                    if (reactionEl) {
+                        reactionEl.classList.add('active');
+                        const countEl = reactionEl.querySelector('.reaction-count');
+                        countEl.textContent = parseInt(countEl.textContent) + 1;
                     } else {
-                        countEl.textContent = count;
-                        reactionEl.classList.remove('active');
+                        reactionEl = document.createElement('div');
+                        reactionEl.className = 'message-reaction active';
+                        reactionEl.innerHTML = `${emoji} <span class="reaction-count">1</span>`;
+                        reactionsDiv.appendChild(reactionEl);
+                    }
+                } else {
+                    if (reactionEl) {
+                        const countEl = reactionEl.querySelector('.reaction-count');
+                        const count = parseInt(countEl.textContent) - 1;
+                        if (count <= 0) {
+                            reactionEl.remove();
+                        } else {
+                            countEl.textContent = count;
+                            reactionEl.classList.remove('active');
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
         // Ответ на сообщение
         let replyingTo = null;

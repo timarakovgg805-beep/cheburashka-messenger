@@ -5321,7 +5321,6 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
                 <div class="message-actions">
                     <button class="message-action-btn" onclick="replyToMessage('${messageId}', '${escapeHtml(text)}')" title="Ответить">↩️</button>
                     <button class="message-action-btn" onclick="copyMessage('${escapeHtml(text)}')" title="Копировать">📋</button>
-                    ${isOwn ? `<button class="message-action-btn" onclick="editMessage('${messageId}')" title="Редактировать">✏️</button>` : ''}
                     ${isOwn ? `<button class="message-action-btn" onclick="deleteMessage('${messageId}')" title="Удалить">🗑️</button>` : ''}
                 </div>
             `;
@@ -5568,30 +5567,7 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
             });
         }
 
-        // Редактирование сообщения
-        function editMessage(messageId) {
-            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
-            if (!messageDiv) return;
-
-            const textEl = messageDiv.querySelector('.message-text');
-            const currentText = textEl.textContent;
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = currentText;
-            input.style.cssText = 'width: 100%; padding: 8px; border: 2px solid var(--brand); border-radius: 4px; background: var(--bg-modifier); color: var(--text-normal);';
-
-            input.onkeypress = (e) => {
-                if (e.key === 'Enter') {
-                    const newText = input.value.trim();
-                    if (newText) {
-                        textEl.innerHTML = `${escapeHtml(newText)} <span class="message-edited">(изменено)</span>`;
-                        // TODO: отправить на сервер
-                    }
-                }
-            };
-
-            input.onblur = () => {
+        // Копирование сообщения
                 textEl.textContent = currentText;
             };
 

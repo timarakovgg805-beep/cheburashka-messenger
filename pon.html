@@ -406,6 +406,11 @@
             transition: all 0.2s;
         }
 
+        .reaction.own-reaction {
+            background: var(--primary-color);
+            opacity: 0.8;
+        }
+
         .reaction:hover {
             background: var(--bg-tertiary);
             transform: scale(1.1);
@@ -1247,18 +1252,283 @@
             transform: scale(1.05);
         }
 
-        .call-modal {
+.call-modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: #000;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 3000;
+        }
+
+        .call-modal.hidden {
+            display: none !important;
+        }
+
+        .call-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .call-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+        }
+
+        .call-status {
+            font-size: 16px;
+            color: rgba(255,255,255,0.9);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .call-status::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #43b581;
+            animation: status-pulse 2s infinite;
+        }
+
+        @keyframes status-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .call-timer {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            font-weight: 500;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+
+        .call-participants {
+            position: absolute;
+            left: 50%;
+            bottom: 110px;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 20;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .call-participants.hidden-participants {
+            transform: translate(-50%, 150%);
+            opacity: 0;
+        }
+
+        .toggle-participants-btn {
+            position: absolute;
+            top: 95px;
+            left: 20px;
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 19;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .toggle-participants-btn.show {
+            display: flex;
+        }
+
+        .toggle-participants-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+
+        .participant-avatar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .participant-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+            font-weight: 600;
+            overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.3);
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+
+        .sound-indicator {
+            position: absolute;
+            top: 0;
+            right: -10px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #666;
+            border: 3px solid #1e1e32;
+            transition: all 0.2s;
+        }
+
+        .sound-indicator.speaking {
+            background: linear-gradient(135deg, #43b581 0%, #3ba567 100%);
+            box-shadow: 0 0 20px rgba(67, 181, 129, 0.8);
+            animation: pulse-sound 0.8s infinite;
+        }
+
+        @keyframes pulse-sound {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 20px rgba(67, 181, 129, 0.8);
+            }
+            50% {
+                transform: scale(1.3);
+                box-shadow: 0 0 30px rgba(67, 181, 129, 1);
+            }
+        }
+
+        .participant-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .participant-name {
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.4);
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+
+        .call-videos {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px 80px;
+        }
+
+        #remoteVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+            border-radius: 12px;
+        }
+
+        #localVideo {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            width: 120px;
+            height: 90px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            z-index: 15;
+            transition: all 0.3s;
+        }
+
+        #localVideo:hover {
+            transform: scale(1.05);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .call-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 25px 30px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, transparent 100%);
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .call-control-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .call-control-btn:hover {
+            transform: scale(1.15);
+        }
+
+        .call-control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .mute {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .mute.active {
+            background: rgba(255,77,77,0.3);
+            box-shadow: 0 0 25px rgba(255,77,77,0.4);
+        }
+
+        .end-call {
+            background: linear-gradient(135deg, #f04747 0%, #ed4245 100%);
+            color: white;
+            box-shadow: 0 8px 25px rgba(240,71,71,0.4);
+            width: 75px;
+            height: 75px;
+            font-size: 32px;
+        }
+
+        .end-call:hover {
+            box-shadow: 0 12px 35px rgba(240,71,71,0.6);
         }
 
         .call-modal.hidden {
@@ -1277,14 +1547,49 @@
             flex-direction: column;
         }
 
-        .call-participants {
+.call-participants {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            left: 50%;
+            bottom: 110px;
+            transform: translateX(-50%);
             display: flex;
-            gap: 15px;
+            gap: 20px;
             z-index: 20;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .call-participants.hidden-participants {
+            transform: translate(-50%, 150%);
+            opacity: 0;
+        }
+
+        .toggle-participants-btn {
+            position: absolute;
+            left: 50%;
+            bottom: 110px;
+            transform: translateX(-50%);
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 19;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-participants-btn.show {
+            display: flex;
+        }
+
+        .toggle-participants-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(-50%) scale(1.1);
         }
 
         .call-participants.hidden-participants {
@@ -1402,27 +1707,24 @@
         }
 
         #localVideo {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 250px;
-            height: 180px;
-            border-radius: 15px;
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            width: 120px;
+            height: 90px;
+            border-radius: 10px;
             object-fit: cover;
-            border: 3px solid white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
         .call-controls {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 20px;
-            background: rgba(0,0,0,0.8);
+            padding: 25px 40px;
+            background: #1a1a1a;
             display: flex;
             justify-content: center;
-            gap: 15px;
+            align-items: center;
+            gap: 20px;
         }
 
         .call-control-btn {
@@ -1431,38 +1733,47 @@
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 24px;
-            transition: all 0.3s;
+            font-size: 26px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .call-control-btn.end {
-            background: #ff4444;
-            color: white;
+        .call-control-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .call-control-btn:active {
+            transform: scale(0.95);
         }
 
         .call-control-btn.mute {
-            background: #666;
+            background: #333;
             color: white;
         }
 
         .call-control-btn.mute.active {
-            background: #ff4444;
+            background: #e74c3c;
+            color: white;
+        }
+
+        .call-control-btn.end-call {
+            background: #e74c3c;
+            color: white;
+            width: 70px;
+            height: 70px;
+            font-size: 30px;
         }
 
         .call-control-btn.hide-icons {
-            background: #666;
+            background: #333;
             color: white;
         }
 
         .call-control-btn.hide-icons.active {
             background: #667eea;
-        }
-
-        .call-control-btn:hover {
-            transform: scale(1.1);
+            color: white;
         }
 
         .call-status {
@@ -1483,13 +1794,15 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 25px 70px rgba(0,0,0,0.4);
+            background: linear-gradient(145deg, #1e1e2e 0%, #2a2a3e 100%);
+            padding: 50px 40px;
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 40px rgba(99, 102, 241, 0.15);
             text-align: center;
             z-index: 3001;
-            min-width: 350px;
+            min-width: 380px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .incoming-call.hidden {
@@ -1497,46 +1810,105 @@
         }
 
         .caller-avatar {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             background: var(--primary-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 40px;
+            font-size: 50px;
             color: white;
             font-weight: 600;
-            margin: 0 auto 20px;
+            margin: 0 auto 25px;
             overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .caller-avatar::before {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+            z-index: -1;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+
+        .call-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 20px;
         }
 
         .incoming-call h3 {
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: white;
         }
 
         .incoming-call p {
-            color: #666;
-            margin-bottom: 30px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 35px;
+            font-size: 15px;
         }
 
         .incoming-call-buttons {
             display: flex;
-            gap: 15px;
+            gap: 20px;
             justify-content: center;
         }
 
         .accept-btn {
-            padding: 15px 40px;
-            background: #43b581;
+            padding: 18px 50px;
+            background: linear-gradient(135deg, #43b581 0%, #3ba567 100%);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 25px rgba(67, 181, 129, 0.4);
+        }
+
+        .accept-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(67, 181, 129, 0.5);
+        }
+
+        .accept-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .reject-btn {
+            padding: 18px 50px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+        }
+
+        .reject-btn:hover {
+            background: rgba(255,77,77,0.2);
+            border-color: rgba(255,77,77,0.5);
         }
 
         .ai-modal {
@@ -2229,7 +2601,10 @@
 
     <div class="call-modal hidden" id="callModal">
         <div class="call-container">
-            <div class="call-status" id="callStatus">Соединение...</div>
+            <div class="call-header">
+                <div class="call-status" id="callStatus">Соединение...</div>
+                <div class="call-timer" id="callTimer">00:00</div>
+            </div>
             <button class="toggle-participants-btn" id="toggleParticipantsBtn" onclick="toggleParticipants()">👥</button>
             <div class="call-participants" id="callParticipants">
                 <div class="participant-avatar">
@@ -2252,7 +2627,7 @@
                 <button class="call-control-btn mute" id="muteBtn" onclick="toggleMute()" title="Микрофон">🎤</button>
                 <button class="call-control-btn hide-icons" id="hideIconsBtn" onclick="toggleCallIcons()" title="Скрыть иконки">👥</button>
                 <button class="call-control-btn mute" id="screenBtn" onclick="toggleScreenShare()" title="Демонстрация экрана">🖥️</button>
-                <button class="call-control-btn end" onclick="endCall()" title="Завершить">📞</button>
+                <button class="call-control-btn end-call" onclick="endCall()" title="Завершить">📞</button>
             </div>
         </div>
     </div>
@@ -2260,7 +2635,10 @@
     <div class="incoming-call hidden" id="incomingCall">
         <div class="caller-avatar" id="callerAvatar"></div>
         <h3 id="callerName"></h3>
-        <p id="callType"></p>
+        <div class="call-type-badge" id="callTypeBadge">
+            <span id="callTypeIcon">📞</span>
+            <span id="callTypeText">Входящий звонок</span>
+        </div>
         <div class="incoming-call-buttons">
             <button class="accept-btn" onclick="acceptCall()">Принять</button>
             <button class="reject-btn" onclick="rejectCall()">Отклонить</button>
@@ -2295,6 +2673,12 @@
                 <option value="30" selected>30 FPS</option>
                 <option value="60">60 FPS</option>
             </select>
+        </div>
+
+        <div class="setting-group">
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="shareSystemAudio"> Включить звук компьютера
+            </label>
         </div>
 
         <div class="screen-share-buttons">
@@ -2667,7 +3051,6 @@
             const nickname = document.getElementById('nicknameInput').value.trim();
             if (nickname) {
                 alert('Функция смены никнейма будет добавлена позже');
-                // TODO: отправить на сервер
             }
         }
 
@@ -2682,7 +3065,7 @@
                 const response = await fetch('/api/feedback', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, message })
+                    body: JSON.stringify({ username: currentUser, message })
                 });
 
                 const data = await response.json();
@@ -3694,7 +4077,9 @@
 
                         // Загружаем аватар
                         try {
-                            const avatarResponse = await fetch(`/api/avatar/${user.username}`);
+                            if (!user.username) continue;
+                            const avatarResponse = await fetch(`/api/avatar/${encodeURIComponent(user.username)}`);
+                            if (!avatarResponse.ok) throw new Error('Avatar fetch failed');
                             const avatarData = await avatarResponse.json();
                             if (avatarData.success && avatarData.avatar) {
                                 avatarUrl = avatarData.avatar;
@@ -3769,7 +4154,9 @@
 
                 // Загружаем аватар с сервера
                 try {
-                    const response = await fetch(`/api/avatar/${user.username}`);
+                    if (!user.username) throw new Error('No username');
+                    const response = await fetch(`/api/avatar/${encodeURIComponent(user.username)}`);
+                    if (!response.ok) throw new Error('Avatar fetch failed');
                     const data = await response.json();
                     if (data.success && data.avatar) {
                         avatarHtml = `<img src="${data.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
@@ -4034,8 +4421,12 @@
         function updateChatAvatar() {
             const chatAvatar = document.getElementById('chatAvatar');
             if (selectedUser) {
-                const initial = selectedUser.username.charAt(0).toUpperCase();
-                chatAvatar.textContent = initial;
+                if (selectedUser.avatar) {
+                    chatAvatar.innerHTML = `<img src="${selectedUser.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                } else {
+                    const initial = selectedUser.username.charAt(0).toUpperCase();
+                    chatAvatar.textContent = initial;
+                }
             }
         }
 
@@ -4202,7 +4593,9 @@
 
                     // Загружаем аватар
                     try {
-                        const response = await fetch(`/api/avatar/${notif.from}`);
+                        if (!notif.from) throw new Error('No from');
+                        const response = await fetch(`/api/avatar/${encodeURIComponent(notif.from)}`);
+                        if (!response.ok) throw new Error('Avatar fetch failed');
                         const data = await response.json();
                         if (data.success && data.avatar) {
                             user.avatar = data.avatar;
@@ -4332,7 +4725,7 @@
                         }
                     }
                 }
-            });
+});
 
             socket.on('notifications', (notifications) => {
                 console.log('Notifications received:', notifications);
@@ -4342,25 +4735,37 @@
                 });
             });
 
-            socket.on('receive-message', ({ from, fromName, message }) => {
+            socket.on('receive-message', ({ from, fromName, message, messageKey }) => {
                 if (!chats.has(from)) {
                     chats.set(from, []);
                 }
                 chats.get(from).push({ type: 'message', text: message, own: false, time: new Date() });
 
                 if (selectedUser && selectedUser.id === from) {
-                    addMessage(message, false);
+                    addMessage(message, false, null, null, messageKey);
                 } else {
-                    // Увеличиваем счетчик непрочитанных если чат не открыт
                     unreadMessages[from] = (unreadMessages[from] || 0) + 1;
                     updateUsersList(onlineUsers);
                 }
             });
 
-            socket.on('receive-reaction', ({ from, messageId, emoji }) => {
-                // Получаем реакцию от другого пользователя
-                const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
-                if (!messageDiv) return;
+            socket.on('receive-reaction', ({ from, messageKey, emoji }) => {
+                console.log('Received reaction:', { from, messageKey, emoji });
+                
+                const allMessages = document.querySelectorAll('[data-message-id]');
+                let messageDiv = null;
+                
+                for (const msg of allMessages) {
+                    if (msg.dataset.messageId === messageKey) {
+                        messageDiv = msg;
+                        break;
+                    }
+                }
+                
+                if (!messageDiv) {
+                    console.log('Message not found for reaction, messageKey:', messageKey);
+                    return;
+                }
 
                 const reactionsDiv = messageDiv.querySelector('.message-reactions');
                 let reactionEl = Array.from(reactionsDiv.children).find(el => el.textContent.includes(emoji));
@@ -4418,10 +4823,10 @@
                     // Увеличиваем счетчик непрочитанных
                     const userInList = Array.from(onlineUsers.values()).find(u => u.id === from);
                     if (userInList) {
-                        if (!unreadMessages.has(from)) {
-                            unreadMessages.set(from, 0);
+                        if (!unreadMessages[from]) {
+                            unreadMessages[from] = 0;
                         }
-                        unreadMessages.set(from, unreadMessages.get(from) + 1);
+                        unreadMessages[from] = unreadMessages[from] + 1;
                         updateUsersList();
                     }
                 }
@@ -4431,6 +4836,19 @@
             socket.on('call-offer', async ({ from, fromName, offer, callType }) => {
                 incomingCallData = { from, fromName, offer, callType };
 
+                // Если мы уже в звонке с этим пользователем - обрабатываем как переговоры
+                if (peerConnection && selectedUser && selectedUser.id === from) {
+                    try {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                        const answer = await peerConnection.createAnswer();
+                        await peerConnection.setLocalDescription(answer);
+                        socket.emit('call-answer', { to: from, answer });
+                    } catch (err) {
+                        console.error('Renegotiation error:', err);
+                    }
+                    return;
+                }
+
                 // Если это демонстрация экрана - автоматически принимаем
                 if (callType === 'screen-sharing') {
                     acceptCall();
@@ -4439,7 +4857,9 @@
 
                 // Получаем аватар звонящего с сервера
                 try {
-                    const response = await fetch(`/api/avatar/${fromName}`);
+                    if (!fromName) throw new Error('No fromName');
+                    const response = await fetch(`/api/avatar/${encodeURIComponent(fromName)}`);
+                    if (!response.ok) throw new Error('Avatar fetch failed');
                     const data = await response.json();
 
                     if (data.success && data.avatar) {
@@ -4452,7 +4872,20 @@
                 }
 
                 document.getElementById('callerName').textContent = fromName;
-                document.getElementById('callType').textContent = 'Звонок';
+                
+                // Обновляем тип звонка
+                const callTypeBadge = document.getElementById('callTypeBadge');
+                const callTypeIcon = document.getElementById('callTypeIcon');
+                const callTypeText = document.getElementById('callTypeText');
+                
+                if (callType === 'screen-sharing') {
+                    callTypeIcon.textContent = '🖥️';
+                    callTypeText.textContent = 'Демонстрация экрана';
+                } else {
+                    callTypeIcon.textContent = '📞';
+                    callTypeText.textContent = 'Входящий звонок';
+                }
+                
                 document.getElementById('incomingCall').classList.remove('hidden');
             });
 
@@ -4662,7 +5095,24 @@
                     data.messages.forEach(msg => {
                         const isOwn = msg.from === currentUser;
                         if (msg.type === 'message') {
-                            addMessage(msg.content, isOwn, null, msg.timestamp);
+                            addMessage(msg.content, isOwn, null, msg.timestamp, msg.messageKey);
+                            
+                            // Восстанавливаем реакции
+                            if (msg.reactions && msg.reactions.length > 0) {
+                                const msgDiv = document.querySelector(`[data-message-id="${msg.messageKey}"]`);
+                                if (msgDiv) {
+                                    const reactionsDiv = msgDiv.querySelector('.message-reactions');
+                                    msg.reactions.forEach(r => {
+                                        const reactionDiv = document.createElement('div');
+                                        reactionDiv.className = 'reaction';
+                                        if (r.users && r.users.includes(currentUser)) {
+                                            reactionDiv.classList.add('own-reaction');
+                                        }
+                                        reactionDiv.innerHTML = `${r.emoji} <span class="reaction-count">${r.users ? r.users.length : 0}</span>`;
+                                        reactionsDiv.appendChild(reactionDiv);
+                                    });
+                                }
+                            }
                         } else if (msg.type === 'file') {
                             addFileMessage(msg.content.name, msg.content.size, msg.content.content, isOwn);
                         } else if (msg.type === 'voice') {
@@ -4772,12 +5222,16 @@
         }
 
 
-        function addMessage(text, isOwn, replyData = null, timestamp = null) {
+function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey = null) {
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isOwn ? 'own' : ''}`;
-            const messageId = Date.now() + Math.random();
+            
+            // Используем уникальный ID с именем отправителя для синхронизации реакций
+            const senderName = isOwn ? currentUser : (selectedUser ? selectedUser.username : 'User');
+            const messageId = messageKey || `${senderName}-${Date.now()}`;
             messageDiv.dataset.messageId = messageId;
+            messageDiv.dataset.sender = senderName;
 
             const time = timestamp
                 ? new Date(timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
@@ -4829,7 +5283,9 @@
             // Получаем аватар пользователя
             let avatarHtml = fromUser.charAt(0).toUpperCase();
             try {
-                const response = await fetch(`/api/avatar/${fromUser}`);
+                if (!fromUser) throw new Error('No fromUser');
+                const response = await fetch(`/api/avatar/${encodeURIComponent(fromUser)}`);
+                if (!response.ok) throw new Error('Avatar fetch failed');
                 const data = await response.json();
                 if (data.success && data.avatar) {
                     avatarHtml = `<img src="${data.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
@@ -4922,33 +5378,66 @@
             a.click();
         }
 
-        // Реакции на сообщения
-        function addReaction(messageId, emoji) {
-            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
-            if (!messageDiv) return;
+// Реакции на сообщения
+        function addReaction(messageKey, emoji) {
+            console.log('Adding reaction:', { messageKey, emoji });
+            
+            const allMessages = document.querySelectorAll('[data-message-id]');
+            let messageDiv = null;
+            
+            for (const msg of allMessages) {
+                if (msg.dataset.messageId === messageKey) {
+                    messageDiv = msg;
+                    break;
+                }
+            }
+            
+            if (!messageDiv) {
+                console.log('Message not found in addReaction, messageKey:', messageKey);
+                return;
+            }
 
             const reactionsDiv = messageDiv.querySelector('.message-reactions');
-            let reactionEl = Array.from(reactionsDiv.children).find(el => el.textContent.includes(emoji));
+            
+            // Проверяем свою реакцию
+            const existingEl = Array.from(reactionsDiv.children).find(el => 
+                el.textContent.includes(emoji) && el.classList.contains('own-reaction')
+            );
+            
+            if (existingEl) {
+                return;
+            }
 
+            let reactionEl = Array.from(reactionsDiv.children).find(el => el.textContent.includes(emoji));
+            
             if (reactionEl) {
                 const countEl = reactionEl.querySelector('.reaction-count');
                 const count = parseInt(countEl.textContent) + 1;
                 countEl.textContent = count;
+                reactionEl.classList.add('own-reaction');
             } else {
                 const newReaction = document.createElement('div');
-                newReaction.className = 'reaction';
+                newReaction.className = 'reaction own-reaction';
                 newReaction.innerHTML = `${emoji} <span class="reaction-count">1</span>`;
                 reactionsDiv.appendChild(newReaction);
             }
 
-            // Отправляем реакцию другому пользователю через Socket.IO
-            if (selectedUser && !selectedUser.isShameBoard) {
-                socket.emit('add-reaction', {
-                    to: selectedUser.id,
-                    messageId,
+            // Сохраняем на сервере
+            fetch('/api/reactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: authToken,
+                    messageKey,
                     emoji
-                });
-            }
+                })
+            });
+
+            // Отправляем реакцию всем остальным пользователям
+            socket.emit('add-reaction', {
+                messageKey,
+                emoji
+            });
         }
 
         // Ответ на сообщение
@@ -5108,6 +5597,35 @@
         let audioContext = null;
         let localAnalyser = null;
         let remoteAnalyser = null;
+        let callStartTime = null;
+        let callTimerInterval = null;
+
+        // Общая функция для обработки входящих треков
+        function handleRemoteTrack(event) {
+            const remoteVideo = document.getElementById('remoteVideo');
+            const remoteAudio = document.getElementById('remoteAudio');
+
+            if (event.track.kind === 'video') {
+                remoteVideo.srcObject = event.streams[0];
+                remoteVideo.style.display = 'block';
+                document.getElementById('callStatus').textContent = 'Просмотр экрана';
+                document.getElementById('toggleParticipantsBtn').classList.add('show');
+                
+                // Если есть аудио трек - продолжаем воспроизводить
+                const audioTracks = event.streams[0].getAudioTracks();
+                if (audioTracks.length > 0 && remoteAudio) {
+                    remoteAudio.srcObject = event.streams[0];
+                    remoteAudio.play().catch(e => {});
+                }
+            } else if (event.track.kind === 'audio') {
+                if (remoteAudio) {
+                    remoteAudio.srcObject = event.streams[0];
+                    remoteAudio.play().catch(e => {});
+                    document.getElementById('callStatus').textContent = 'Соединено';
+                }
+                setupAudioAnalyser(event.streams[0], false);
+            }
+        }
 
         async function startCall(type) {
             if (!selectedUser) return;
@@ -5116,6 +5634,11 @@
             document.getElementById('callModal').classList.remove('hidden');
             document.getElementById('callStatus').textContent = 'Вызов...';
             document.getElementById('localVideo').style.display = 'none';
+
+            // Запускаем таймер звонка
+            callStartTime = Date.now();
+            callTimerInterval = setInterval(updateCallTimer, 1000);
+            updateCallTimer();
 
             // Устанавливаем иконки участников
             setupCallParticipants();
@@ -5148,26 +5671,7 @@
                 parameters.encodings[0].priority = 'high';
                 audioSender.setParameters(parameters);
 
-                peerConnection.ontrack = (event) => {
-                    console.log('Received track:', event.track.kind);
-                    const remoteVideo = document.getElementById('remoteVideo');
-
-                    if (event.track.kind === 'video') {
-                        // Видео трек - демонстрация экрана
-                        remoteVideo.srcObject = event.streams[0];
-                        remoteVideo.style.display = 'block';
-                        document.getElementById('callStatus').textContent = 'Просмотр экрана';
-                        document.getElementById('toggleParticipantsBtn').classList.add('show');
-                    } else if (event.track.kind === 'audio') {
-                        // Аудио трек
-                        const remoteAudio = document.getElementById('remoteAudio');
-                        if (!remoteAudio.srcObject) {
-                            remoteAudio.srcObject = event.streams[0];
-                            document.getElementById('callStatus').textContent = 'Соединено';
-                        }
-                        setupAudioAnalyser(event.streams[0], false);
-                    }
-                };
+                peerConnection.ontrack = handleRemoteTrack;
 
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
@@ -5269,35 +5773,47 @@
 
             const screenBtn = document.getElementById('screenBtn');
 
-            // Если уже показываем экран, останавливаем
             if (currentCallType === 'screen-sharing') {
                 try {
-                    // Останавливаем все видео треки
+                    // Находим video sender
                     const senders = peerConnection.getSenders();
                     const videoSender = senders.find(sender => sender.track && sender.track.kind === 'video');
 
                     if (videoSender) {
                         videoSender.track.stop();
-                        peerConnection.removeTrack(videoSender);
+                        
+                        // Восстанавливаем оригинальную камеру если есть
+                        if (localStream && localStream.getVideoTracks().length > 0) {
+                            await videoSender.replaceTrack(localStream.getVideoTracks()[0]);
+                        } else {
+                            peerConnection.removeTrack(videoSender);
+                        }
                     }
 
-                    // Уведомляем второго пользователя
                     socket.emit('screen-share-stopped', { to: selectedUser.id });
 
                     currentCallType = 'audio';
-                    document.getElementById('localVideo').style.display = 'none';
+                    document.getElementById('localVideo').style.display = 'block';
                     document.getElementById('callStatus').textContent = 'Соединено';
                     screenBtn.classList.remove('active');
 
-                    // Скрываем кнопку скрытия участников
                     document.getElementById('toggleParticipantsBtn').classList.remove('show');
                     document.getElementById('callParticipants').classList.remove('hidden-participants');
+
+                    // Обновляем offer после остановки демонстрации
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(offer);
+
+                    socket.emit('call-offer', {
+                        to: selectedUser.id,
+                        offer: offer,
+                        callType: 'audio'
+                    });
 
                 } catch (err) {
                     console.error('Error stopping screen share:', err);
                 }
             } else {
-                // Показываем окно настроек
                 document.getElementById('screenShareSettings').classList.remove('hidden');
             }
         }
@@ -5306,16 +5822,17 @@
             document.getElementById('screenShareSettings').classList.add('hidden');
         }
 
-        async function startScreenShareWithSettings() {
+async function startScreenShareWithSettings() {
             const quality = document.getElementById('screenQuality').value;
             const fps = document.getElementById('screenFPS').value;
+            const shareSystemAudio = document.getElementById('shareSystemAudio').checked;
 
             document.getElementById('screenShareSettings').classList.add('hidden');
 
             const screenBtn = document.getElementById('screenBtn');
+            screenBtn.classList.add('waiting');
 
             try {
-                // Начинаем демонстрацию экрана с выбранными настройками
                 const screenStream = await navigator.mediaDevices.getDisplayMedia({
                     video: {
                         cursor: "always",
@@ -5324,13 +5841,30 @@
                         height: { ideal: parseInt(quality) },
                         frameRate: { ideal: parseInt(fps) }
                     },
-                    audio: false
+                    audio: shareSystemAudio
                 });
 
                 const videoTrack = screenStream.getVideoTracks()[0];
 
-                // Добавляем только видео трек, аудио остается из localStream
-                peerConnection.addTrack(videoTrack, screenStream);
+                // Заменяем видео трек в существующем sender
+                const senders = peerConnection.getSenders();
+                const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+                
+                if (videoSender) {
+                    // Останавливаем старый трек
+                    videoSender.track.stop();
+                    // Заменяем на новый
+                    await videoSender.replaceTrack(videoTrack);
+                } else {
+                    // Если нет видео sender, добавляем новый трек
+                    peerConnection.addTrack(videoTrack, screenStream);
+                }
+
+                // Если есть аудио с экрана - добавляем
+                const screenAudioTrack = screenStream.getAudioTracks()[0];
+                if (screenAudioTrack) {
+                    peerConnection.addTrack(screenAudioTrack, screenStream);
+                }
 
                 // Показываем локальное видео
                 const localVideoElement = document.getElementById('localVideo');
@@ -5338,18 +5872,16 @@
                 localVideoElement.style.display = 'block';
                 document.getElementById('callStatus').textContent = 'Демонстрация экрана';
 
-                // Показываем кнопку скрытия участников
                 document.getElementById('toggleParticipantsBtn').classList.add('show');
 
                 currentCallType = 'screen-sharing';
                 screenBtn.classList.add('active');
 
-                // Когда пользователь останавливает демонстрацию через браузер
                 videoTrack.onended = () => {
                     toggleScreenShare();
                 };
 
-                // Пересоздаем offer с новым треком
+                // Обновляем offer
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
 
@@ -5361,7 +5893,11 @@
 
             } catch (err) {
                 console.error('Error starting screen share:', err);
-                if (err.name !== 'NotAllowedError') {
+                if (err.name === 'NotAllowedError') {
+                    // Пользователь отменил или закрыл диалог выбора экрана
+                    document.getElementById('screenShareSettings').classList.add('hidden');
+                    screenBtn.classList.remove('waiting');
+                } else {
                     alert('Не удалось начать демонстрацию экрана');
                 }
             }
@@ -5389,26 +5925,7 @@
                     peerConnection.addTrack(track, localStream);
                 });
 
-                peerConnection.ontrack = (event) => {
-                    console.log('Received track:', event.track.kind);
-                    const remoteVideo = document.getElementById('remoteVideo');
-
-                    if (event.track.kind === 'video') {
-                        // Видео трек - демонстрация экрана
-                        remoteVideo.srcObject = event.streams[0];
-                        remoteVideo.style.display = 'block';
-                        document.getElementById('callStatus').textContent = 'Просмотр экрана';
-                        document.getElementById('toggleParticipantsBtn').classList.add('show');
-                    } else if (event.track.kind === 'audio') {
-                        // Аудио трек
-                        const remoteAudio = document.getElementById('remoteAudio');
-                        if (!remoteAudio.srcObject) {
-                            remoteAudio.srcObject = event.streams[0];
-                            document.getElementById('callStatus').textContent = 'Соединено';
-                        }
-                        setupAudioAnalyser(event.streams[0], false);
-                    }
-                };
+                peerConnection.ontrack = handleRemoteTrack;
 
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
@@ -5451,19 +5968,29 @@
 
             remoteName.textContent = incomingCallData.fromName;
 
+            // Запускаем таймер звонка
+            callStartTime = Date.now();
+            callTimerInterval = setInterval(updateCallTimer, 1000);
+            updateCallTimer();
+
             // Получаем аватар звонящего
-            fetch(`/api/avatar/${incomingCallData.fromName}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.avatar) {
-                        remoteIcon.innerHTML = `<img src="${data.avatar}">`;
-                    } else {
+            if (incomingCallData?.fromName) {
+                fetch(`/api/avatar/${encodeURIComponent(incomingCallData.fromName)}`)
+                    .then(res => {
+                        if (!res.ok) throw new Error('Fetch failed');
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data.success && data.avatar) {
+                            remoteIcon.innerHTML = `<img src="${data.avatar}">`;
+                        } else {
+                            remoteIcon.textContent = incomingCallData.fromName.charAt(0).toUpperCase();
+                        }
+                    })
+                    .catch(() => {
                         remoteIcon.textContent = incomingCallData.fromName.charAt(0).toUpperCase();
-                    }
-                })
-                .catch(() => {
-                    remoteIcon.textContent = incomingCallData.fromName.charAt(0).toUpperCase();
-                });
+                    });
+            }
         }
 
         function rejectCall() {
@@ -5473,6 +6000,13 @@
         }
 
         function endCall() {
+            // Останавливаем таймер
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+                callTimerInterval = null;
+            }
+            callStartTime = null;
+
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
@@ -5499,6 +6033,22 @@
             document.getElementById('remoteVideo').srcObject = null;
             document.getElementById('localVideo').srcObject = null;
             currentCallType = null;
+        }
+
+        function updateCallTimer() {
+            if (!callStartTime) return;
+            
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            const timerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            const statusEl = document.getElementById('callStatus');
+            if (statusEl.textContent.includes('Вызов')) {
+                // Ещё не принят
+            } else {
+                statusEl.textContent = `Разговор ${timerText}`;
+            }
         }
 
         function toggleMute() {
@@ -5615,6 +6165,46 @@
             }
         }
 
+        function startDictation() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!speechRecognition) {
+                speechRecognition = new SpeechRecognition();
+                speechRecognition.lang = 'ru-RU';
+                speechRecognition.continuous = true;
+                speechRecognition.interimResults = false;
+
+                speechRecognition.onresult = (event) => {
+                    const input = document.getElementById('messageInput');
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) {
+                            const text = event.results[i][0].transcript;
+                            if (input.value) {
+                                input.value += ' ' + text;
+                            } else {
+                                input.value = text;
+                            }
+                        }
+                    }
+                };
+
+                speechRecognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    stopDictation();
+                };
+
+                speechRecognition.onend = () => {
+                    if (isDictating) {
+                        speechRecognition.start();
+                    }
+                };
+            }
+
+            isDictating = true;
+            document.querySelector('.voice-btn').classList.add('recording');
+            speechRecognition.start();
+        }
+
         function cancelVoiceRecording() {
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
@@ -5689,11 +6279,6 @@
                                 <div class="voice-progress-bar" id="${voiceId}-progress"></div>
                             </div>
                             <div class="voice-duration">${durationText}</div>
-                        </div>
-                        <button class="voice-transcribe-btn" onclick="transcribeVoice('${voiceId}')" title="Расшифровать">📝</button>
-                    </div>
-                    <div class="voice-transcript hidden" id="${voiceId}-transcript">
-                        <span class="voice-transcript-text"></span>
                     </div>
                     <audio id="${voiceId}" src="${voiceData.content}" style="display: none;"></audio>
                 </div>
@@ -5745,7 +6330,7 @@
             }
 
             btn.classList.add('transcribing');
-            transcriptText.textContent = 'Расшифровка...';
+            transcriptText.textContent = 'Говорите в микрофон...';
             transcriptDiv.classList.remove('hidden');
 
             try {
@@ -5756,12 +6341,6 @@
                 recognition.continuous = true;
                 recognition.interimResults = false;
 
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const source = audioContext.createMediaElementSource(audio);
-                const destination = audioContext.createMediaStreamDestination();
-                source.connect(destination);
-                source.connect(audioContext.destination);
-
                 let transcript = '';
 
                 recognition.onresult = (event) => {
@@ -5770,33 +6349,27 @@
                             transcript += event.results[i][0].transcript + ' ';
                         }
                     }
-                    transcriptText.textContent = transcript.trim() || 'Расшифровка...';
+                    transcriptText.textContent = transcript.trim() || 'Слушаю... говорите';
                 };
 
                 recognition.onerror = (event) => {
                     console.error('Speech recognition error:', event.error);
-                    transcriptText.textContent = 'Не удалось расшифровать. Попробуйте воспроизвести аудио.';
+                    transcriptText.textContent = 'Не удалось распознать. Разрешите микрофон и говорите четче.';
                     btn.classList.remove('transcribing');
                 };
 
                 recognition.onend = () => {
                     btn.classList.remove('transcribing');
                     if (!transcript.trim()) {
-                        transcriptText.textContent = 'Текст не распознан. Попробуйте воспроизвести аудио и говорить четче.';
+                        transcriptText.textContent = 'Текст не распознан. Разрешите микрофон и говорите.';
                     }
                 };
 
-                audio.currentTime = 0;
                 recognition.start();
-                audio.play();
-
-                audio.onended = () => {
-                    recognition.stop();
-                };
 
             } catch (err) {
                 console.error('Transcription error:', err);
-                transcriptText.textContent = 'Ошибка расшифровки. Попробуйте еще раз.';
+                transcriptText.textContent = 'Ошибка. Разрешите микрофон в браузере.';
                 btn.classList.remove('transcribing');
             }
         }

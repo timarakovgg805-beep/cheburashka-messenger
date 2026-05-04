@@ -470,17 +470,65 @@ app.post('/api/messages/delete', async (req, res) => {
         const username = decoded.username;
 
         const allMessages = await loadMessages();
-        const filteredMessages = allMessages.filter(msg =>
+        const filtered = allMessages.filter(msg =>
             !((msg.from === username && msg.to === withUser) ||
-              (msg.from === withUser && msg.to === username))
+            (msg.from === withUser && msg.to === username))
         );
 
-        fs.writeFileSync(MESSAGES_FILE, JSON.stringify(filteredMessages, null, 2));
+        if (messagesCollection) {
+            await messagesCollection.deleteMany({ $or: [
+                { from: username, to: withUser },
+                { from: withUser, to: username }
+            ]});
+        }
+        fs.writeFileSync(MESSAGES_FILE, JSON.stringify(filtered, null, 2));
 
         res.json({ success: true });
     } catch (err) {
-        console.error('Delete messages error:', err);
-        res.status(500).json({ error: 'Ошибка удаления сообщений' });
+        res.status(401).json({ error: 'Ошибка удаления' });
+    }
+});
+
+app.post('/api/reactions', async (req, res) => {
+    try {
+        const { token, messageKey, emoji } = req.body;
+
+        if (!token || !messageKey || !emoji) {
+            return res.status(400).json({ error: 'Недостаточно данных' });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const username = decoded.username;
+
+        const allMessages = await loadMessages();
+        const msgIndex = allMessages.findIndex(msg => msg.messageKey === messageKey);
+        
+        if (msgIndex === -1) {
+            return res.status(404).json({ error: 'Сообщение не найдено' });
+        }
+
+        if (!allMessages[msgIndex].reactions) {
+            allMessages[msgIndex].reactions = [];
+        }
+
+        const existingIdx = allMessages[msgIndex].reactions.findIndex(r => r.emoji === emoji);
+        if (existingIdx >= 0) {
+            allMessages[msgIndex].reactions[existingIdx].users.push(username);
+        } else {
+            allMessages[msgIndex].reactions.push({ emoji, users: [username] });
+        }
+
+        if (messagesCollection) {
+            await messagesCollection.updateOne(
+                { messageKey },
+                { $set: { reactions: allMessages[msgIndex].reactions } }
+            );
+        }
+        fs.writeFileSync(MESSAGES_FILE, JSON.stringify(allMessages, null, 2));
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(401).json({ error: 'Ошибка сохранения реакции' });
     }
 });
 
@@ -1046,7 +1094,9 @@ io.on('connection', (socket) => {
                 to: toUsername,
                 type: 'message',
                 content: message,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                messageKey: `${fromUsername}-${Date.now()}`,
+                reactions: []
             });
 
             // Если пользователь онлайн, отправляем сообщение
@@ -1054,14 +1104,16 @@ io.on('connection', (socket) => {
                 io.to(to).emit('receive-message', {
                     from: socket.id,
                     fromName: fromUsername,
-                    message
+                    message,
+                    messageKey: `${fromUsername}-${Date.now()}`
                 });
             } else {
                 // Если пользователь оффлайн, создаем уведомление
                 addNotification(toUsername, {
                     from: fromUsername,
                     message: message,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    messageKey: `${fromUsername}-${Date.now()}`
                 });
             }
         }
@@ -1185,11 +1237,11 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('add-reaction', ({ to, messageId, emoji }) => {
-        // Отправляем реакцию получателю
-        io.to(to).emit('receive-reaction', {
+    socket.on('add-reaction', ({ messageKey, emoji }) => {
+        // Отправляем реакцию всем остальным пользователям
+        socket.broadcast.emit('receive-reaction', {
             from: socket.id,
-            messageId,
+            messageKey,
             emoji
         });
     });

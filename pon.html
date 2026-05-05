@@ -6523,9 +6523,20 @@ async function startScreenShareWithSettings() {
             const durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
             const voiceId = `voice-${Date.now()}-${Math.random()}`;
+            
+            const username = own ? currentUser : (selectedUser ? selectedUser.username : 'User');
+            const myAvatarSrc = !own ? null : (userSettings.avatar && typeof userSettings.avatar === 'string' && userSettings.avatar.length > 0
+                ? (userSettings.avatar.startsWith('data:') ? userSettings.avatar : `${userSettings.avatar}?t=${Date.now()}`)
+                : null);
+            const theirAvatarSrc = own ? null : (selectedUser && selectedUser.avatar && typeof selectedUser.avatar === 'string' && selectedUser.avatar.length > 0
+                ? (selectedUser.avatar.startsWith('data:') ? selectedUser.avatar : `${selectedUser.avatar}?t=${Date.now()}`)
+                : null);
+            const avatarContent = own
+                ? (myAvatarSrc ? `<img src="${myAvatarSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : username.charAt(0).toUpperCase())
+                : (theirAvatarSrc ? `<img src="${theirAvatarSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : username.charAt(0).toUpperCase());
 
             messageDiv.innerHTML = `
-                <div class="message-avatar">${own ? currentUser.charAt(0).toUpperCase() : (selectedUser.username ? selectedUser.username.charAt(0).toUpperCase() : '?')}</div>
+                <div class="message-avatar">${avatarContent}</div>
                 <div class="message-content">
                     <div class="message-header">
                         <span class="message-author">${own ? currentUser : (selectedUser.username || 'Unknown')}</span>

@@ -2805,10 +2805,7 @@
 
     
     <script src="/socket.io/socket.io.js"></script>
-    <script type="module">
-        import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
-        import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-messaging.js';
-        
+    <script>
         const userAgent = navigator.userAgent.toLowerCase();
         const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
         const isIOS = /iphone|ipad|ipod/.test(userAgent);
@@ -4703,7 +4700,7 @@ function togglePasswordXz() {
                     authToken = data.token;
                     sessionStorage.setItem('pon_token', authToken);
                     initFirebase(username);
-                    initializeApp();
+                    initApp();
                 } else {
                     showError(data.error || 'Ошибка входа');
                 }
@@ -4720,6 +4717,12 @@ function togglePasswordXz() {
         window.showError = showError;
         window.hideError = hideError;
 window.login = login;
+        window.toggleAuthMode = toggleAuthMode;
+        window.togglePasswordXz = togglePasswordXz;
+        window.downloadCheburasshka = downloadCheburasshka;
+        window.showError = showError;
+        window.hideError = hideError;
+        window.initApp = initApp;
 
         async function autoLogin() {
             try {
@@ -4733,7 +4736,7 @@ window.login = login;
 
                 if (data.success) {
                     currentUser = data.username;
-                    initializeApp();
+                    initApp();
                 } else {
                     sessionStorage.removeItem('pon_token');
                     authToken = null;
@@ -4822,7 +4825,7 @@ function logout() {
             }, 5000);
         }
 
-        function initializeApp() {
+        function initApp() {
             document.getElementById('loginModal').classList.add('hidden');
             document.getElementById('mainContainer').classList.remove('hidden');
             document.getElementById('currentUser').textContent = currentUser;

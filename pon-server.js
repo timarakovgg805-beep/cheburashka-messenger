@@ -31,6 +31,7 @@ const ONESIGNAL_API_KEY = 'os_v2_app_kek5d77wcbculoourmvtxb7szxgw53oup46emqvf5aw
 
 // Firebase config
 const firebaseServerKey = 'AIzaSyBjECuFummvU-Zd8YXWb9tQoqhaPqtV9BM';
+const firebaseVapidKey = 'BKkVx_4vX6bXdHSn977zbQ2AqA7vOC7HfzqbEDjyW4CTSBI_nMfgf-Db2-KNb7CetAYla0qxNFzN-geEx7z-toM';
 
 // Store player IDs
 const playerIds = new Map();
@@ -299,14 +300,14 @@ async function sendPushNotification(username, notification) {
                     from: notification.from,
                     messageKey: notification.messageKey
                 },
-                tokens: fcmTokensList
+                registration_ids: fcmTokensList
             };
 
             const data = JSON.stringify(message);
 
             const options = {
                 hostname: 'fcm.googleapis.com',
-                path: '/v1/projects/cheburashka-messenger/messages:sendMulticast',
+                path: '/fcm/send',
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

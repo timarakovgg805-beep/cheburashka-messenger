@@ -4656,7 +4656,9 @@ function togglePasswordXz() {
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') return;
                 
-                const token = await getToken(messaging);
+                const token = await getToken(messaging, {
+                    vapidKey: "BKkVx_4vX6bXdHSn977zbQ2AqA7vOC7HfzqbEDjyW4CTSBI_nMfgf-Db2-KNb7CetAYla0qxNFzN-geEx7z-toM"
+                });
                 if (token) {
                     fetch('/api/fcm-register', {
                         method: 'POST',

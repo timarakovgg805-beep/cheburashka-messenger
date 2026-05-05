@@ -446,10 +446,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'pon.html'));
 });
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'pon.html'));
-});
-
 app.get('/favicon.ico', (req, res) => {
     res.status(204).end();
 });

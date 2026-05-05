@@ -348,6 +348,10 @@
             background: rgba(4,4,5,0.07);
         }
 
+        .message:hover {
+            background: rgba(4,4,5,0.07);
+        }
+
         .message:hover .message-actions {
             opacity: 1;
             pointer-events: all;
@@ -424,22 +428,49 @@
 
         .message-add-reaction {
             display: none;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--bg-modifier);
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
         }
 
-        .message:hover .message-add-reaction {
+        .message-actions {
+            display: none;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .message:hover .message-actions {
             display: flex;
         }
 
+.message-actions {
+            display: none;
+            gap: 4px;
+            margin-top: 4px;
+            align-items: center;
+        }
+
+        .message:hover .message-actions {
+            display: flex;
+        }
+
+        .message-add-reaction {
+            font-size: 16px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-modifier);
+            opacity: 0.5;
+        }
+
         .message-add-reaction:hover {
+            opacity: 1;
+            background: var(--primary-color);
+        }
+
+        .message:hover .message-add-reaction {
+            opacity: 0.7;
+        }
+
+        .message:hover .message-add-reaction:hover {
+            opacity: 1;
             background: var(--primary-color);
         }
 
@@ -512,6 +543,7 @@
         .message-content {
             flex: 1;
             min-width: 0;
+            padding-right: 40px;
         }
 
         .message-header {
@@ -2398,7 +2430,7 @@
                 <div class="chat-header-avatar" id="chatAvatar"></div>
                 <div class="chat-header-info">
                     <h2 id="chatName"></h2>
-                    <p>В сети</p>
+                    <p id="chatStatus">В сети</p>
                 </div>
                 <div class="call-buttons">
                     <button class="call-btn" onclick="startCall('audio')" title="Позвонить">📞</button>
@@ -2415,11 +2447,10 @@
             </div>
 
             <div class="input-area hidden" id="inputArea">
-                <div class="input-wrapper">
-                    <input type="text" id="messageInput" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
+<div class="input-wrapper">
+                    <input type="text" id="messageInput" placeholder="Введите сообщение..." onkeydown="handleTyping()">
                 </div>
-                <button onclick="openFileSelector()">📎</button>
-                <button class="voice-btn" onclick="startVoiceRecording()">🎤</button>
+                <button onclick="openFileUpload()">📎</button>
                 <button onclick="sendMessage()">➤</button>
             </div>
         </div>
@@ -2745,6 +2776,19 @@
         </div>
     </div>
 
+    <!-- Attachments Modal -->
+    <div class="modal hidden" id="attachmentsModal" onclick="closeAttachmentsModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: var(--text-normal); margin: 0;">Файлы и вложения</h3>
+                <button onclick="closeAttachmentsModal()" style="background: none; border: none; color: var(--text-normal); font-size: 20px; cursor: pointer;">✕</button>
+            </div>
+            <div id="attachmentsList" style="max-height: 400px; overflow-y: auto;">
+                <!-- attachments go here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Crop Modal -->
     <div id="cropModal" class="crop-modal">
         <div class="crop-modal-content">
@@ -2762,7 +2806,6 @@
     
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // Определение браузера и устройства
         const userAgent = navigator.userAgent.toLowerCase();
         const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
         const isIOS = /iphone|ipad|ipod/.test(userAgent);
@@ -2803,9 +2846,10 @@
         let currentUser;
         let selectedUser = null;
         let chats = new Map();
-        let authToken = sessionStorage.getItem('pon_token');
+        let authToken = localStorage.getItem('pon_token');
         let isRegisterMode = false;
         let onlineUsers = [];
+        let typingUsers = []; //_global
         let unreadMessages = {}; // Счетчик непрочитанных сообщений для каждого пользователя
         let userSettings = { gradient: 'default', avatar: null, theme: 'dark', inputPadding: 0 };
         let peerConnection = null;
@@ -2835,9 +2879,20 @@
         }
 
         window.onload = () => {
-            if (authToken) {
+            // Проверяем если это выход (logout в URL)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('logout')) {
+                // Просто показываем экран входа
+                return;
+            }
+            
+            let savedToken = sessionStorage.getItem('pon_token');
+            
+            if (savedToken) {
+                authToken = savedToken;
                 autoLogin();
             }
+            // Не читаем из localStorage
         };
 
         function openSettings() {
@@ -2892,8 +2947,9 @@
             // Обновляем иконку в шапке чата если чат открыт
             if (selectedUser) {
                 const chatAvatar = document.getElementById('chatAvatar');
-                if (selectedUser.avatar) {
-                    chatAvatar.innerHTML = `<img src="${selectedUser.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                if (selectedUser.avatar && typeof selectedUser.avatar === 'string' && selectedUser.avatar.length > 0) {
+                    const avatarSrc = selectedUser.avatar.startsWith('data:') ? selectedUser.avatar : `${selectedUser.avatar}?t=${Date.now()}`;
+                    chatAvatar.innerHTML = `<img src="${avatarSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 } else {
                     const initial = selectedUser.username.charAt(0).toUpperCase();
                     chatAvatar.textContent = initial;
@@ -3055,8 +3111,9 @@
             // Обновляем иконку в шапке чата если чат открыт
             if (selectedUser) {
                 const chatAvatar = document.getElementById('chatAvatar');
-                if (selectedUser.avatar) {
-                    chatAvatar.innerHTML = `<img src="${selectedUser.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                if (selectedUser.avatar && typeof selectedUser.avatar === 'string' && selectedUser.avatar.length > 0) {
+                    const avatarSrc = selectedUser.avatar.startsWith('data:') ? selectedUser.avatar : `${selectedUser.avatar}?t=${Date.now()}`;
+                    chatAvatar.innerHTML = `<img src="${avatarSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 } else {
                     const initial = selectedUser.username.charAt(0).toUpperCase();
                     chatAvatar.textContent = initial;
@@ -4149,8 +4206,21 @@
                         // Проверяем онлайн ли пользователь
                         const onlineUser = allOnlineUsers.find(u => u.username === user.username);
                         const isOnline = !!onlineUser;
-                        const statusText = isOnline ? 'В сети' : 'Не в сети';
-                        const statusColor = isOnline ? '#43b581' : '#747f8d';
+                        
+                        // Проверяем, печатает ли пользователь
+                        const isTyping = onlineUser && typingUsers && typingUsers.includes(user.username);
+                        
+                        let statusText, statusColor;
+                        if (isTyping) {
+                            statusText = 'печатает...';
+                            statusColor = '#faa61a';
+                        } else if (isOnline) {
+                            statusText = 'В сети';
+                            statusColor = '#43b581';
+                        } else {
+                            statusText = 'Не в сети';
+                            statusColor = '#747f8d';
+                        }
 
                         userItem.innerHTML = `
                             <div class="user-avatar">${avatarHtml}</div>
@@ -4224,8 +4294,21 @@
 
                 // Проверяем онлайн ли пользователь
                 const isOnline = allOnlineUsers.some(u => u.id === user.id);
-                const statusText = isOnline ? 'В сети' : 'Не в сети';
-                const statusColor = isOnline ? '#43b581' : '#747f8d';
+                
+                // Проверяем, печатает ли пользователь
+                const isTyping = typingUsers && typingUsers.includes(user.username);
+                
+                let statusText, statusColor;
+                if (isTyping) {
+                    statusText = 'печатает...';
+                    statusColor = '#faa61a';
+                } else if (isOnline) {
+                    statusText = 'В сети';
+                    statusColor = '#43b581';
+                } else {
+                    statusText = 'Не в сети';
+                    statusColor = '#747f8d';
+                }
 
                 // Добавляем бейдж с непрочитанными сообщениями
                 const unreadCount = unreadMessages[user.id] || 0;
@@ -4478,8 +4561,9 @@
         function updateChatAvatar() {
             const chatAvatar = document.getElementById('chatAvatar');
             if (selectedUser) {
-                if (selectedUser.avatar) {
-                    chatAvatar.innerHTML = `<img src="${selectedUser.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                if (selectedUser.avatar && typeof selectedUser.avatar === 'string' && selectedUser.avatar.length > 0) {
+                    const avatarSrc = selectedUser.avatar.startsWith('data:') ? selectedUser.avatar : `${selectedUser.avatar}?t=${Date.now()}`;
+                    chatAvatar.innerHTML = `<img src="${avatarSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 } else {
                     const initial = selectedUser.username.charAt(0).toUpperCase();
                     chatAvatar.textContent = initial;
@@ -4542,6 +4626,26 @@ function togglePasswordXz() {
             document.getElementById('errorMessage').classList.add('hidden');
         }
 
+        // OneSignal Push
+        function initOneSignal(username) {
+            if (!window.OneSignal) return;
+            window.OneSignal.sendTag('username', username);
+            window.OneSignal.register().then(function(playerId) {
+                fetch('/api/onesignal-register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ playerId, username })
+                });
+            });
+            window.OneSignal.on('notificationclick', function(event) {
+                event.notification.close();
+                const data = event.notification.additionalData;
+                if (data && data.from) {
+                    window.open(`/?chat=${data.from}`, '_blank');
+                }
+            });
+        }
+
         async function login() {
             try {
                 const username = document.getElementById('usernameInput').value.trim();
@@ -4564,8 +4668,8 @@ function togglePasswordXz() {
                 if (data.success) {
                     currentUser = username;
                     authToken = data.token;
-                    localStorage.setItem('pon_token', authToken);
-                    localStorage.setItem('pon_user', username);
+                    sessionStorage.setItem('pon_token', authToken);
+                    initOneSignal(username);
                     initializeApp();
                 } else {
                     showError(data.error || 'Ошибка входа');
@@ -4607,13 +4711,13 @@ window.login = login;
             }
         }
 
-        function logout() {
+function logout() {
             sessionStorage.removeItem('pon_token');
             localStorage.removeItem('lastOpenedChat');
             if (socket) {
                 socket.disconnect();
             }
-            location.reload();
+            window.location.href = window.location.pathname;
         }
 
         function showNotification(notif) {
@@ -4771,13 +4875,13 @@ window.login = login;
                 location.reload();
             });
 
-            socket.on('users-update', (users) => {
+socket.on('users-update', (users) => {
                 console.log('Users update received:', users);
                 onlineUsers = users;
                 if (users && users.length > 0) {
                     updateUsersList(users);
 
-                    // Обновляем аватарку выбранного пользователя, если он онлайн
+                    // Обновляем аватарку выбранного пользователя
                     if (selectedUser && !selectedUser.isShameBoard) {
                         const updatedUser = users.find(u => u.id === selectedUser.id);
                         if (updatedUser && updatedUser.avatar !== selectedUser.avatar) {
@@ -4786,7 +4890,48 @@ window.login = login;
                         }
                     }
                 }
-});
+            });
+
+// Тайп-индикатор
+        socket.on('user-typing', ({ from, username }) => {
+                // Добавляем пользователя в список печатающих
+                if (!typingUsers.includes(username)) {
+                    typingUsers.push(username);
+                }
+                
+                // Обновляем статус в чате
+                if (selectedUser && selectedUser.id === from) {
+                    const chatStatus = document.getElementById('chatStatus');
+                    if (chatStatus) {
+                        chatStatus.textContent = 'печатает...';
+                        chatStatus.style.color = '#fff';
+                    }
+                }
+                
+                // Обновляем список пользователей чтобы показать статус
+                updateUsersList(onlineUsers);
+                
+                // Убираем через 3 секунды
+                setTimeout(() => {
+                    typingUsers = typingUsers.filter(u => u !== username);
+                    updateUsersList(onlineUsers);
+                    
+                    // Возвращаем статус в чате
+                    if (selectedUser && selectedUser.id === from) {
+                        const chatStatus = document.getElementById('chatStatus');
+                        if (chatStatus) {
+                            chatStatus.textContent = 'В сети';
+                            chatStatus.style.color = '';
+                        }
+                    }
+                }, 3000);
+            });
+
+            // Отметка о прочтении
+            socket.on('messages-read', ({ by }) => {
+                // Можно добавить визуальный индикатор
+                console.log('Сообщения прочитаны', by);
+            });
 
             socket.on('notifications', (notifications) => {
                 console.log('Notifications received:', notifications);
@@ -4796,14 +4941,14 @@ window.login = login;
                 });
             });
 
-            socket.on('receive-message', ({ from, fromName, message, messageKey }) => {
+socket.on('receive-message', ({ from, fromName, message, messageKey, replyTo }) => {
                 if (!chats.has(from)) {
                     chats.set(from, []);
                 }
                 chats.get(from).push({ type: 'message', text: message, own: false, time: new Date() });
 
                 if (selectedUser && selectedUser.id === from) {
-                    addMessage(message, false, null, null, messageKey);
+                    addMessage(message, false, replyTo ? { text: replyTo } : null, null, messageKey);
                 } else {
                     unreadMessages[from] = (unreadMessages[from] || 0) + 1;
                     updateUsersList(onlineUsers);
@@ -5210,6 +5355,21 @@ window.login = login;
             }
         }
 
+        
+
+        function handleTyping() {
+            // Enter key sends message
+            if (event.key === 'Enter') {
+                sendMessage();
+                return;
+            }
+            
+            // Send typing indicator
+            if (selectedUser && !selectedUser.isShameBoard) {
+                socket.emit('typing', { to: selectedUser.id });
+            }
+        }
+
         function sendMessage() {
             if (!selectedUser) return;
 
@@ -5299,9 +5459,15 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
                 : new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
             const username = isOwn ? currentUser : (selectedUser ? selectedUser.username : 'User');
+            const myAvatarSrc = userSettings.avatar && typeof userSettings.avatar === 'string' && userSettings.avatar.length > 0
+                ? (userSettings.avatar.startsWith('data:') ? userSettings.avatar : `${userSettings.avatar}?t=${Date.now()}`)
+                : null;
+            const theirAvatarSrc = selectedUser && selectedUser.avatar && typeof selectedUser.avatar === 'string' && selectedUser.avatar.length > 0
+                ? (selectedUser.avatar.startsWith('data:') ? selectedUser.avatar : `${selectedUser.avatar}?t=${Date.now()}`)
+                : null;
             const avatarContent = isOwn
-                ? (userSettings.avatar ? `<img src="${userSettings.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : username.charAt(0).toUpperCase())
-                : (selectedUser && selectedUser.avatar ? `<img src="${selectedUser.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : username.charAt(0).toUpperCase());
+                ? (myAvatarSrc ? `<img src="${myAvatarSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : username.charAt(0).toUpperCase())
+                : (theirAvatarSrc ? `<img src="${theirAvatarSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : username.charAt(0).toUpperCase());
 
             const replyPreview = replyData ? `<div class="reply-preview">↩️ ${escapeHtml(replyData.text)}...</div>` : '';
 
@@ -5315,12 +5481,12 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
                     ${replyPreview}
                     <div class="message-text">${escapeHtml(text)}</div>
                     <div class="message-reactions"></div>
-                    <div class="message-add-reaction" onclick="showReactionPicker(this.parentElement)">➕</div>
                 </div>
                 <div class="message-actions">
                     <button class="message-action-btn" onclick="replyToMessage('${messageId}', '${escapeHtml(text)}')" title="Ответить">↩️</button>
                     <button class="message-action-btn" onclick="copyMessage('${escapeHtml(text)}')" title="Копировать">📋</button>
                     ${isOwn ? `<button class="message-action-btn" onclick="deleteMessage('${messageId}')" title="Удалить">🗑️</button>` : ''}
+                    <button class="message-action-btn" onclick="showReactionPicker(this.closest('.message'))" title="Реакция">➕</button>
                 </div>
             `;
 
@@ -5364,7 +5530,7 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
                     <div class="message-reactions"></div>
                 </div>
                 <div class="message-actions">
-                    <button class="message-action-btn" onclick="addReaction('${messageId}', '👍')" title="Реакция">👍</button>
+                    <button class="message-action-btn" onclick="showReactionPicker(this.closest('.message'))" title="Реакция">➕</button>
                     <button class="message-action-btn" onclick="copyMessage('${escapeHtml(text)}')" title="Копировать">📋</button>
                 </div>
             `;
@@ -5486,7 +5652,14 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
                 }
             }
 
-            // Отправляем на сервер
+            // Сохраняем на сервере
+            fetch('/api/reactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: authToken, messageKey, emoji, add: true })
+            });
+
+            // Отправляем другим пользователям
             if (socket) {
                 socket.emit('toggle-reaction', {
                     messageKey,
@@ -5532,29 +5705,39 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
             });
         }
 
-        // Ответ на сообщение
+// Ответ на сообщение
         let replyingTo = null;
         function replyToMessage(messageId, text) {
-            replyingTo = { id: messageId, text: text.substring(0, 50) };
-            const inputArea = document.getElementById('inputArea');
-
-            let replyPreview = inputArea.querySelector('.reply-preview');
-            if (!replyPreview) {
-                replyPreview = document.createElement('div');
-                replyPreview.className = 'reply-preview';
-                inputArea.insertBefore(replyPreview, inputArea.firstChild);
+            // Проверяем на null/undefined
+            if (!text) {
+                console.log('replyToMessage: text is null', messageId);
+                return;
             }
-
+            
+            // Сохраняем данные ответа
+            replyingTo = { id: messageId, text: String(text).substring(0, 50) };
+            
+            // Удаляем старый preview если есть
+            const oldPreview = document.getElementById('replyPreview');
+            if (oldPreview) oldPreview.remove();
+            
+            const inputArea = document.getElementById('inputArea');
+            const replyPreview = document.createElement('div');
+            replyPreview.className = 'reply-preview';
+            replyPreview.id = 'replyPreview';
             replyPreview.innerHTML = `
-                Ответ на: ${escapeHtml(replyingTo.text)}...
-                <button onclick="cancelReply()" style="float: right; background: none; border: none; cursor: pointer;">✕</button>
+                <span>↩️ Ответ: ${escapeHtml(replyingTo.text)}</span>
+                <button onclick="cancelReply()" style="background: none; border: none; cursor: pointer; font-size: 14px;">✕</button>
             `;
+            
+            inputArea.insertBefore(replyPreview, inputArea.firstChild);
+            inputArea.classList.remove('hidden');
         }
 
         function cancelReply() {
             replyingTo = null;
-            const replyPreview = document.querySelector('.reply-preview');
-            if (replyPreview) replyPreview.remove();
+            const oldPreview = document.getElementById('replyPreview');
+            if (oldPreview) oldPreview.remove();
         }
 
         // Копирование сообщения
@@ -5746,8 +5929,9 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
 
             if (selectedUser) {
                 remoteName.textContent = selectedUser.username;
-                if (selectedUser.avatar) {
-                    remoteIcon.innerHTML = `<img src="${selectedUser.avatar}">`;
+                if (selectedUser.avatar && typeof selectedUser.avatar === 'string' && selectedUser.avatar.length > 0) {
+                    const avatarSrc = selectedUser.avatar.startsWith('data:') ? selectedUser.avatar : `${selectedUser.avatar}?t=${Date.now()}`;
+                    remoteIcon.innerHTML = `<img src="${avatarSrc}">`;
                 } else {
                     const initial = selectedUser.username.charAt(0).toUpperCase();
                     remoteIcon.textContent = initial;
@@ -6121,6 +6305,43 @@ async function startScreenShareWithSettings() {
         }
 
         function openFileSelector() {
+            if (!selectedUser) return;
+            
+            // Показываем модалку с вложениями
+            const modal = document.getElementById('attachmentsModal');
+            const list = document.getElementById('attachmentsList');
+            
+            // Собираем все файлы из чата
+            const chatMessages = chats.get(selectedUser.id) || [];
+            const files = chatMessages.filter(m => m.type === 'file');
+            
+            if (files.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Файлов пока нет</div>';
+            } else {
+                list.innerHTML = files.map(f => `
+                    <div class="file-message" onclick="downloadFile('${f.file.content}', '${f.file.name}')" style="cursor: pointer; padding: 10px; border-bottom: 1px solid var(--bg-modifier);">
+                        <div style="font-size: 24px; margin-bottom: 5px;">📎</div>
+                        <div style="color: var(--text-normal);">${f.file.name}</div>
+                        <div style="color: var(--text-muted); font-size: 12px;">${formatFileSize(f.file.size)}</div>
+                    </div>
+                `).join('');
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeAttachmentsModal(e) {
+            if (e && e.target !== e.currentTarget) return;
+            document.getElementById('attachmentsModal').classList.add('hidden');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function openFileUpload() {
             if (!selectedUser) return;
 
             const input = document.createElement('input');

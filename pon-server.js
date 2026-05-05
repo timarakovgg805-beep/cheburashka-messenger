@@ -25,6 +25,13 @@ const LOGIN_LOGS_FILE = path.join(__dirname, 'login-logs.json');
 const NOTIFICATIONS_FILE = path.join(__dirname, 'notifications.json');
 const FEEDBACK_FILE = path.join(__dirname, 'feedback.json');
 
+// OneSignal config
+const ONESIGNAL_APP_ID = '5115d1ff-f610-4545-b9d4-8b2b3b87f2cd';
+const ONESIGNAL_API_KEY = 'os_v2_app_kek5d77wcbculoourmvtxb7szxgw53oup46emqvf5awichyf5rrxu3fb6pi5ty5xuds4midtkr4fylkp7cmz5wlajb3bez5l7ks7k4q';
+
+// Store player IDs
+const playerIds = new Map();
+
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/cheburashka';
 let db;
@@ -65,6 +72,7 @@ async function connectDB() {
 connectDB();
 
 const onlineUsers = new Map();
+const lastSeen = new Map(); // { username: timestamp }
 
 async function loadUsers() {
     if (usersCollection) {
@@ -234,6 +242,43 @@ function addNotification(username, notification) {
     }
     notifications[username].push(notification);
     saveNotifications(notifications);
+
+    // Send push notification via OneSignal
+    sendPushNotification(username, notification);
+}
+
+async function sendPushNotification(username, notification) {
+    const ids = playerIds.get(username);
+    if (!ids || ids.length === 0) return;
+
+    try {
+        const https = require('https');
+        const data = JSON.stringify({
+            app_id: ONESIGNAL_APP_ID,
+            include_player_ids: ids,
+            headings: { en: 'Cheburashka' },
+            contents: { en: `${notification.from}: ${notification.message.substring(0, 50)}` },
+            data: { from: notification.from, messageKey: notification.messageKey },
+            url: `https://yoursite.com/?chat=${notification.from}`
+        });
+
+        const options = {
+            hostname: 'onesignal.com',
+            path: '/api/v1/notifications',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${ONESIGNAL_API_KEY}`
+            }
+        };
+
+        const req = https.request(options);
+        req.on('error', console.error);
+        req.write(data);
+        req.end();
+    } catch (err) {
+        console.error('Push notification error:', err);
+    }
 }
 
 function loadFeedback() {
@@ -328,7 +373,19 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, {
+    index: false,
+    setHeaders: (res, path) => {
+        if (path.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        }
+    }
+}));
+
+app.get('/', (req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.sendFile(path.join(__dirname, 'pon.html'));
+});
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'pon.html'));
@@ -495,6 +552,54 @@ app.post('/api/messages/delete', async (req, res) => {
         }
         fs.writeFileSync(MESSAGES_FILE, JSON.stringify(allMessages, null, 2));
 
+        res.json({ success: true });
+    } catch (err) {
+        res.status(401).json({ error: 'Ошибка сохранения реакции' });
+    }
+});
+
+app.post('/api/reactions', async (req, res) => {
+    try {
+        const { token, messageKey, emoji, add } = req.body;
+        if (!token || !messageKey || !emoji) {
+            return res.status(400).json({ error: 'Недостаточно данных' });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const username = decoded.username;
+
+        const allMessages = await loadMessages();
+        const msgIndex = allMessages.findIndex(msg => msg.messageKey === messageKey);
+        
+        if (msgIndex === -1) {
+            return res.status(404).json({ error: 'Сообщение не найдено' });
+        }
+
+        if (!allMessages[msgIndex].reactions) {
+            allMessages[msgIndex].reactions = [];
+        }
+
+        const existingIdx = allMessages[msgIndex].reactions.findIndex(r => r.emoji === emoji);
+        
+        if (add) {
+            if (existingIdx >= 0) {
+                if (!allMessages[msgIndex].reactions[existingIdx].users.includes(username)) {
+                    allMessages[msgIndex].reactions[existingIdx].users.push(username);
+                }
+            } else {
+                allMessages[msgIndex].reactions.push({ emoji, users: [username] });
+            }
+        } else {
+            if (existingIdx >= 0) {
+                allMessages[msgIndex].reactions[existingIdx].users = 
+                    allMessages[msgIndex].reactions[existingIdx].users.filter(u => u !== username);
+                if (allMessages[msgIndex].reactions[existingIdx].users.length === 0) {
+                    allMessages[msgIndex].reactions.splice(existingIdx, 1);
+                }
+            }
+        }
+
+        fs.writeFileSync(MESSAGES_FILE, JSON.stringify(allMessages, null, 2));
         res.json({ success: true });
     } catch (err) {
         res.status(401).json({ error: 'Ошибка сохранения реакции' });
@@ -757,6 +862,28 @@ app.get('/api/users/list', async (req, res) => {
     } catch (err) {
         console.error('Get users list error:', err);
         res.status(500).json({ error: 'Ошибка получения списка пользователей' });
+    }
+});
+
+// Save OneSignal player ID
+app.post('/api/onesignal-register', async (req, res) => {
+    try {
+        const { playerId, username } = req.body;
+        if (!playerId || !username) {
+            return res.status(400).json({ error: 'playerId and username required' });
+        }
+        if (!playerIds.has(username)) {
+            playerIds.set(username, []);
+        }
+        const ids = playerIds.get(username);
+        if (!ids.includes(playerId)) {
+            ids.push(playerId);
+        }
+        console.log(`Registered OneSignal ID for ${username}: ${playerId}`);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('OneSignal register error:', err);
+        res.status(500).json({ error: 'Ошибка регистрации' });
     }
 });
 
@@ -1029,8 +1156,11 @@ io.on('connection', (socket) => {
                 id: socket.id,
                 username: decoded.username,
                 avatar: avatar,
-                online: true
+                online: true,
+                lastSeen: Date.now()
             });
+            
+            lastSeen.set(decoded.username, Date.now());
 
             console.log(`${decoded.username} authenticated from ${clientIP}, total users: ${onlineUsers.size}`);
             io.emit('users-update', Array.from(onlineUsers.values()));
@@ -1047,10 +1177,30 @@ io.on('connection', (socket) => {
     });
 
     socket.on('get-users', () => {
-        socket.emit('users-update', Array.from(onlineUsers.values()));
+        const userList = Array.from(onlineUsers.values()).map(u => ({
+            ...u,
+            lastSeen: lastSeen.get(u.username) || Date.now()
+        }));
+        socket.emit('users-update', userList);
     });
 
-    socket.on('send-message', async ({ to, message }) => {
+    // Тайп-индикатор
+    socket.on('typing', ({ to }) => {
+        io.to(to).emit('user-typing', {
+            from: socket.id,
+            username: onlineUsers.get(socket.id)?.username
+        });
+    });
+    
+    // Отметка о прочтении
+    socket.on('message-read', ({ to }) => {
+        const fromUsername = onlineUsers.get(socket.id)?.username;
+        io.to(to).emit('messages-read', {
+            by: fromUsername
+        });
+    });
+
+    socket.on('send-message', async ({ to, message, replyTo }) => {
         const fromUsername = onlineUsers.get(socket.id)?.username;
         const toUser = Array.from(onlineUsers.values()).find(u => u.id === to);
 
@@ -1074,7 +1224,8 @@ io.on('connection', (socket) => {
                     from: socket.id,
                     fromName: fromUsername,
                     message,
-                    messageKey: `${fromUsername}-${Date.now()}`
+                    messageKey: `${fromUsername}-${Date.now()}`,
+                    replyTo: replyTo
                 });
             } else {
                 // Если пользователь оффлайн, создаем уведомление
@@ -1159,8 +1310,19 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         const user = onlineUsers.get(socket.id);
+        if (user?.username) {
+            lastSeen.set(user.username, Date.now());
+            // Remove player ID on disconnect
+            playerIds.delete(user.username);
+        }
         onlineUsers.delete(socket.id);
         io.emit('users-update', Array.from(onlineUsers.values()));
+        // Обновляем last-seen для всех
+        const userList = Array.from(onlineUsers.values()).map(u => ({
+            ...u,
+            lastSeen: lastSeen.get(u.username) || Date.now()
+        }));
+        io.emit('users-update', userList);
         console.log(`${user?.username || 'User'} disconnected, total users: ${onlineUsers.size}`);
     });
 

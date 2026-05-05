@@ -24,12 +24,26 @@ const ADMIN_SETTINGS_FILE = path.join(__dirname, 'admin-settings.json');
 const LOGIN_LOGS_FILE = path.join(__dirname, 'login-logs.json');
 const NOTIFICATIONS_FILE = path.join(__dirname, 'notifications.json');
 const FEEDBACK_FILE = path.join(__dirname, 'feedback.json');
+const FIREBASE_SERVICE_ACCOUNT = path.join(__dirname, 'cheburashka-messenger-firebase-adminsdk-fbsvc-6dfb5380a2.json');
+
+// Firebase Admin SDK
+let firebaseAdmin;
+try {
+    firebaseAdmin = require('firebase-admin');
+    const serviceAccount = JSON.parse(fs.readFileSync(FIREBASE_SERVICE_ACCOUNT, 'utf8'));
+    firebaseAdmin.initializeApp({
+        credential: firebaseAdmin.credential.cert(serviceAccount)
+    });
+    console.log('Firebase Admin initialized');
+} catch (err) {
+    console.error('Firebase Admin init error:', err);
+}
 
 // OneSignal config
 const ONESIGNAL_APP_ID = '5115d1ff-f610-4545-b9d4-8b2b3b87f2cd';
 const ONESIGNAL_API_KEY = 'os_v2_app_kek5d77wcbculoourmvtxb7szxgw53oup46emqvf5awichyf5rrxu3fb6pi5ty5xuds4midtkr4fylkp7cmz5wlajb3bez5l7ks7k4q';
 
-// Firebase config
+// Firebase config - need Server Key from Firebase Console
 const firebaseServerKey = 'AIzaSyBjECuFummvU-Zd8YXWb9tQoqhaPqtV9BM';
 const firebaseVapidKey = 'BKkVx_4vX6bXdHSn977zbQ2AqA7vOC7HfzqbEDjyW4CTSBI_nMfgf-Db2-KNb7CetAYla0qxNFzN-geEx7z-toM';
 
@@ -286,12 +300,12 @@ async function sendPushNotification(username, notification) {
         }
     }
 
-    // Send via FCM
+    // Send via FCM (Firebase Admin SDK)
     const fcmTokensList = fcmTokens.get(username);
-    if (fcmTokensList && fcmTokensList.length > 0) {
+    if (fcmTokensList && fcmTokensList.length > 0 && firebaseAdmin) {
         try {
-            const https = require('https');
-            const message = {
+            const messages = fcmTokensList.map(token => ({
+                token: token,
                 notification: {
                     title: 'Cheburashka',
                     body: `${notification.from}: ${notification.message.substring(0, 50)}`
@@ -299,26 +313,13 @@ async function sendPushNotification(username, notification) {
                 data: {
                     from: notification.from,
                     messageKey: notification.messageKey
-                },
-                registration_ids: fcmTokensList
-            };
-
-            const data = JSON.stringify(message);
-
-            const options = {
-                hostname: 'fcm.googleapis.com',
-                path: '/fcm/send',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `key=${firebaseServerKey}`
                 }
-            };
+            }));
 
-            const req = https.request(options);
-            req.on('error', console.error);
-            req.write(data);
-            req.end();
+            for (const msg of messages) {
+                await firebaseAdmin.messaging().send(msg);
+            }
+            console.log(`FCM push sent to ${username}`);
         } catch (err) {
             console.error('FCM push error:', err);
         }

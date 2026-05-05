@@ -2805,7 +2805,10 @@
 
     
     <script src="/socket.io/socket.io.js"></script>
-    <script>
+    <script type="module">
+        import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
+        import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-messaging.js';
+        
         const userAgent = navigator.userAgent.toLowerCase();
         const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
         const isIOS = /iphone|ipad|ipod/.test(userAgent);
@@ -4626,24 +4629,53 @@ function togglePasswordXz() {
             document.getElementById('errorMessage').classList.add('hidden');
         }
 
-        // OneSignal Push
-        function initOneSignal(username) {
-            if (!window.OneSignal) return;
-            window.OneSignal.sendTag('username', username);
-            window.OneSignal.register().then(function(playerId) {
-                fetch('/api/onesignal-register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerId, username })
-                });
-            });
-            window.OneSignal.on('notificationclick', function(event) {
-                event.notification.close();
-                const data = event.notification.additionalData;
-                if (data && data.from) {
-                    window.open(`/?chat=${data.from}`, '_blank');
+        // Firebase Cloud Messaging
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjECuFummvU-Zd8YXWb9tQoqhaPqtV9BM",
+            authDomain: "cheburashka-messenger.firebaseapp.com",
+            projectId: "cheburashka-messenger",
+            storageBucket: "cheburashka-messenger.firebasestorage.app",
+            messagingSenderId: "866248912465",
+            appId: "1:866248912465:web:ad608b7c62e5d66818d270",
+            measurementId: "G-7PWGS83PC5"
+        };
+
+        async function initFirebase(username) {
+            try {
+                // Load Firebase SDK dynamically
+                const appModule = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js');
+                const msgModule = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-messaging.js');
+                
+                const initializeApp = appModule.initializeApp;
+                const getMessaging = msgModule.getMessaging;
+                const getToken = msgModule.getToken;
+                const onMessage = msgModule.onMessage;
+                
+                const app = initializeApp(firebaseConfig);
+                const messaging = getMessaging(app);
+                
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') return;
+                
+                const token = await getToken(messaging, { vapidKey: "BEl62iUYgU4xSWluaAlTDPGTT4E8-tdMtIkEeVS5C3N0" });
+                if (token) {
+                    fetch('/api/fcm-register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token, username })
+                    });
                 }
-            });
+                
+                onMessage(messaging, (payload) => {
+                    console.log('FCM message:', payload);
+                    const data = payload.data;
+                    if (data && data.from) {
+                        window.open(`/?chat=${data.from}`, '_blank');
+                    }
+                });
+            } catch (err) {
+                console.error('Firebase init error:', err);
+            }
         }
 
         async function login() {
@@ -4669,7 +4701,7 @@ function togglePasswordXz() {
                     currentUser = username;
                     authToken = data.token;
                     sessionStorage.setItem('pon_token', authToken);
-                    initOneSignal(username);
+                    initFirebase(username);
                     initializeApp();
                 } else {
                     showError(data.error || 'Ошибка входа');

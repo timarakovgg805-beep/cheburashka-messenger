@@ -29,8 +29,12 @@ const FEEDBACK_FILE = path.join(__dirname, 'feedback.json');
 const ONESIGNAL_APP_ID = '5115d1ff-f610-4545-b9d4-8b2b3b87f2cd';
 const ONESIGNAL_API_KEY = 'os_v2_app_kek5d77wcbculoourmvtxb7szxgw53oup46emqvf5awichyf5rrxu3fb6pi5ty5xuds4midtkr4fylkp7cmz5wlajb3bez5l7ks7k4q';
 
+// Firebase config
+const firebaseServerKey = 'AIzaSyBjECuFummvU-Zd8YXWb9tQoqhaPqtV9BM';
+
 // Store player IDs
 const playerIds = new Map();
+const fcmTokens = new Map();
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/cheburashka';
@@ -248,36 +252,75 @@ function addNotification(username, notification) {
 }
 
 async function sendPushNotification(username, notification) {
+    // Send via OneSignal
     const ids = playerIds.get(username);
-    if (!ids || ids.length === 0) return;
+    if (ids && ids.length > 0) {
+        try {
+            const https = require('https');
+            const data = JSON.stringify({
+                app_id: ONESIGNAL_APP_ID,
+                include_player_ids: ids,
+                headings: { en: 'Cheburashka' },
+                contents: { en: `${notification.from}: ${notification.message.substring(0, 50)}` },
+                data: { from: notification.from, messageKey: notification.messageKey },
+                url: `https://yoursite.com/?chat=${notification.from}`
+            });
 
-    try {
-        const https = require('https');
-        const data = JSON.stringify({
-            app_id: ONESIGNAL_APP_ID,
-            include_player_ids: ids,
-            headings: { en: 'Cheburashka' },
-            contents: { en: `${notification.from}: ${notification.message.substring(0, 50)}` },
-            data: { from: notification.from, messageKey: notification.messageKey },
-            url: `https://yoursite.com/?chat=${notification.from}`
-        });
+            const options = {
+                hostname: 'onesignal.com',
+                path: '/api/v1/notifications',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${ONESIGNAL_API_KEY}`
+                }
+            };
 
-        const options = {
-            hostname: 'onesignal.com',
-            path: '/api/v1/notifications',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${ONESIGNAL_API_KEY}`
-            }
-        };
+            const req = https.request(options);
+            req.on('error', console.error);
+            req.write(data);
+            req.end();
+        } catch (err) {
+            console.error('OneSignal push error:', err);
+        }
+    }
 
-        const req = https.request(options);
-        req.on('error', console.error);
-        req.write(data);
-        req.end();
-    } catch (err) {
-        console.error('Push notification error:', err);
+    // Send via FCM
+    const fcmTokensList = fcmTokens.get(username);
+    if (fcmTokensList && fcmTokensList.length > 0) {
+        try {
+            const https = require('https');
+            const message = {
+                notification: {
+                    title: 'Cheburashka',
+                    body: `${notification.from}: ${notification.message.substring(0, 50)}`
+                },
+                data: {
+                    from: notification.from,
+                    messageKey: notification.messageKey
+                },
+                tokens: fcmTokensList
+            };
+
+            const data = JSON.stringify(message);
+
+            const options = {
+                hostname: 'fcm.googleapis.com',
+                path: '/v1/projects/cheburashka-messenger/messages:sendMulticast',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `key=${firebaseServerKey}`
+                }
+            };
+
+            const req = https.request(options);
+            req.on('error', console.error);
+            req.write(data);
+            req.end();
+        } catch (err) {
+            console.error('FCM push error:', err);
+        }
     }
 }
 
@@ -887,6 +930,28 @@ app.post('/api/onesignal-register', async (req, res) => {
     }
 });
 
+// Save FCM token
+app.post('/api/fcm-register', async (req, res) => {
+    try {
+        const { token, username } = req.body;
+        if (!token || !username) {
+            return res.status(400).json({ error: 'token and username required' });
+        }
+        if (!fcmTokens.has(username)) {
+            fcmTokens.set(username, []);
+        }
+        const tokens = fcmTokens.get(username);
+        if (!tokens.includes(token)) {
+            tokens.push(token);
+        }
+        console.log(`Registered FCM token for ${username}`);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('FCM register error:', err);
+        res.status(500).json({ error: 'Ошибка регистрации' });
+    }
+});
+
 // Search users
 app.post('/api/search-users', async (req, res) => {
     try {
@@ -1314,6 +1379,7 @@ io.on('connection', (socket) => {
             lastSeen.set(user.username, Date.now());
             // Remove player ID on disconnect
             playerIds.delete(user.username);
+            fcmTokens.delete(user.username);
         }
         onlineUsers.delete(socket.id);
         io.emit('users-update', Array.from(onlineUsers.values()));

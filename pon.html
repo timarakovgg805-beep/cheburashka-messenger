@@ -5179,6 +5179,12 @@ socket.on('receive-message', ({ from, fromName, message, messageKey, replyTo }) 
                     avatarHtml = initial;
                 }
 
+                // Определяем статус пользователя
+                let statusText = 'В сети';
+                if (typingUsers && typingUsers.includes(user.username)) {
+                    statusText = 'печатает...';
+                }
+
                 // Определяем индикатор статуса в зависимости от темы
                 const statusIndicator = userSettings.theme === 'original'
                     ? '<span class="status-mandarin">🍊</span>'
@@ -5194,7 +5200,7 @@ socket.on('receive-message', ({ from, fromName, message, messageKey, replyTo }) 
                         <div class="user-name">${escapeHtml(user.username)}</div>
                         <div class="user-status">
                             ${statusIndicator}
-                            В сети
+                            ${statusText}
                         </div>
                     </div>
                     ${unreadBadge}

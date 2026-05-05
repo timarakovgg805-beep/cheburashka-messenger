@@ -602,6 +602,40 @@ app.post('/api/messages/delete', async (req, res) => {
     }
 });
 
+app.post('/api/chat/delete', async (req, res) => {
+    try {
+        const { token, withUser } = req.body;
+
+        if (!token || !withUser) {
+            return res.status(400).json({ error: 'Недостаточно данных' });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const username = decoded.username;
+
+        const allMessages = loadMessages();
+        const filteredMessages = allMessages.filter(msg => {
+            const isBetween = msg.from === username && msg.to === withUser;
+            const isFrom = msg.from === withUser && msg.to === username;
+            return !(isBetween || isFrom);
+        });
+        saveMessages(filteredMessages);
+
+        if (messagesCollection) {
+            await messagesCollection.deleteMany({
+                $or: [
+                    { from: username, to: withUser },
+                    { from: withUser, to: username }
+                ]
+            });
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(401).json({ error: 'Ошибка удаления чата' });
+    }
+});
+
 app.post('/api/reactions', async (req, res) => {
     try {
         const { token, messageKey, emoji, add } = req.body;

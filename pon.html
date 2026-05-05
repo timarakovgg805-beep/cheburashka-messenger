@@ -5821,7 +5821,7 @@ function addMessage(text, isOwn, replyData = null, timestamp = null, messageKey 
             if (!confirmed) return;
 
             try {
-                const response = await fetch('/api/messages/delete', {
+                const response = await fetch('/api/chat/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+require('dotenv').config();
 const { Server } = require('socket.io');
 const path = require('path');
 const bcrypt = require('bcrypt');
@@ -30,11 +31,24 @@ const FIREBASE_SERVICE_ACCOUNT = path.join(__dirname, 'cheburashka-messenger-fir
 let firebaseAdmin;
 try {
     firebaseAdmin = require('firebase-admin');
-    const serviceAccount = JSON.parse(fs.readFileSync(FIREBASE_SERVICE_ACCOUNT, 'utf8'));
-    firebaseAdmin.initializeApp({
-        credential: firebaseAdmin.credential.cert(serviceAccount)
-    });
-    console.log('Firebase Admin initialized');
+    const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
+    const FIREBASE_CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL;
+    const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
+
+    if (FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY) {
+        const serviceAccount = {
+            type: 'service_account',
+            project_id: FIREBASE_PROJECT_ID,
+            client_email: FIREBASE_CLIENT_EMAIL,
+            private_key: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+        };
+        firebaseAdmin.initializeApp({
+            credential: firebaseAdmin.credential.cert(serviceAccount)
+        });
+        console.log('Firebase Admin initialized');
+    } else {
+        console.log('Firebase credentials not set, push disabled');
+    }
 } catch (err) {
     console.error('Firebase Admin init error:', err);
 }

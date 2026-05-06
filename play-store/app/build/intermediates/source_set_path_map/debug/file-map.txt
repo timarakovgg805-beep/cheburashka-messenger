@@ -1,0 +1,7 @@
+com.cheburashka.messenger.app-pngs-0 E:\okak\play-store\app\build\generated\res\pngs\debug
+com.cheburashka.messenger.app-resValues-1 E:\okak\play-store\app\build\generated\res\resValues\debug
+com.cheburashka.messenger.app-packageDebugResources-2 E:\okak\play-store\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.cheburashka.messenger.app-packageDebugResources-3 E:\okak\play-store\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.cheburashka.messenger.app-merged_res-4 E:\okak\play-store\app\build\intermediates\merged_res\debug
+com.cheburashka.messenger.app-debug-5 E:\okak\play-store\app\src\debug\res
+com.cheburashka.messenger.app-main-6 E:\okak\play-store\app\src\main\res

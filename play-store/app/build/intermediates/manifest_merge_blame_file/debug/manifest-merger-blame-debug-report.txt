@@ -1,0 +1,62 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.cheburashka.messenger"
+4    android:allowBackup="true"
+5    android:theme="@android:style/Theme.Material.Light"
+6    android:usesCleartextTraffic="true" >
+7
+8    <uses-sdk
+9        android:minSdkVersion="21"
+10        android:targetSdkVersion="34" />
+11
+12    <uses-permission android:name="android.permission.INTERNET" />
+12-->E:\okak\play-store\app\src\main\AndroidManifest.xml:7:5-67
+12-->E:\okak\play-store\app\src\main\AndroidManifest.xml:7:22-64
+13    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+13-->E:\okak\play-store\app\src\main\AndroidManifest.xml:8:5-79
+13-->E:\okak\play-store\app\src\main\AndroidManifest.xml:8:22-76
+14    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+14-->E:\okak\play-store\app\src\main\AndroidManifest.xml:9:5-71
+14-->E:\okak\play-store\app\src\main\AndroidManifest.xml:9:22-68
+15    <uses-permission android:name="android.permission.CAMERA" />
+15-->E:\okak\play-store\app\src\main\AndroidManifest.xml:10:5-65
+15-->E:\okak\play-store\app\src\main\AndroidManifest.xml:10:22-62
+16
+17    <application
+17-->E:\okak\play-store\app\src\main\AndroidManifest.xml:12:5-30:19
+18        android:allowBackup="true"
+18-->E:\okak\play-store\app\src\main\AndroidManifest.xml:13:9-35
+19        android:debuggable="true"
+20        android:extractNativeLibs="true"
+21        android:icon="@drawable/ic_launcher"
+21-->E:\okak\play-store\app\src\main\AndroidManifest.xml:14:9-45
+22        android:label="Чебурашка"
+22-->E:\okak\play-store\app\src\main\AndroidManifest.xml:15:9-34
+23        android:supportsRtl="true" >
+23-->E:\okak\play-store\app\src\main\AndroidManifest.xml:16:9-35
+24        <activity
+24-->E:\okak\play-store\app\src\main\AndroidManifest.xml:18:9-28:20
+25            android:name="com.cheburashka.messenger.MainActivity"
+25-->E:\okak\play-store\app\src\main\AndroidManifest.xml:19:13-41
+26            android:configChanges="orientation|keyboardHidden|screenSize"
+26-->E:\okak\play-store\app\src\main\AndroidManifest.xml:20:13-74
+27            android:exported="true"
+27-->E:\okak\play-store\app\src\main\AndroidManifest.xml:21:13-36
+28            android:launchMode="singleTask"
+28-->E:\okak\play-store\app\src\main\AndroidManifest.xml:22:13-44
+29            android:theme="@android:style/Theme.Material.Light.NoActionBar" >
+29-->E:\okak\play-store\app\src\main\AndroidManifest.xml:23:13-76
+30            <intent-filter>
+30-->E:\okak\play-store\app\src\main\AndroidManifest.xml:24:13-27:29
+31                <action android:name="android.intent.action.MAIN" />
+31-->E:\okak\play-store\app\src\main\AndroidManifest.xml:25:17-69
+31-->E:\okak\play-store\app\src\main\AndroidManifest.xml:25:25-66
+32
+33                <category android:name="android.intent.category.LAUNCHER" />
+33-->E:\okak\play-store\app\src\main\AndroidManifest.xml:26:17-77
+33-->E:\okak\play-store\app\src\main\AndroidManifest.xml:26:27-74
+34            </intent-filter>
+35        </activity>
+36    </application>
+37
+38</manifest>

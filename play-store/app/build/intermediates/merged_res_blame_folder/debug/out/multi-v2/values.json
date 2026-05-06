@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.cheburashka.messenger.app-mergeDebugResources-2:/values/values.xml",
+            "map": [
+                {
+                    "source": "E:\\okak\\play-store\\app\\src\\main\\res\\values\\colors.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "56",
+                        "endOffsets": "107"
+                    }
+                }
+            ]
+        }
+    ]
+}

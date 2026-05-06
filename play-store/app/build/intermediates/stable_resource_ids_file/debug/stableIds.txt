@@ -1,0 +1,4 @@
+com.cheburashka.messenger:drawable/ic_launcher_foreground = 0x7f020001
+com.cheburashka.messenger:drawable/ic_launcher = 0x7f020000
+com.cheburashka.messenger:mipmap/ic_launcher = 0x7f030000
+com.cheburashka.messenger:color/ic_launcher_background = 0x7f010000
